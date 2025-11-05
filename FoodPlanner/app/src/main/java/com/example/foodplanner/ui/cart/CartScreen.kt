@@ -13,7 +13,7 @@ import com.example.foodplanner.viewmodel.PantryViewModel
 fun CartScreen(vm: PantryViewModel = viewModel()) {
     val cart by vm.cart.observeAsState(emptyList())
     Column {
-        TextButton(onClick = { vm.clearCart() }) { Text("Vaciar") }
+        TextButton(onClick = { vm.clearCart() }) { Text("Clear") }
         LazyColumn {
             items(cart) { row ->
                 ListItem(

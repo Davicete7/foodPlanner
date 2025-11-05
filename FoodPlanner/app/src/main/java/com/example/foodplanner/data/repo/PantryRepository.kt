@@ -9,12 +9,12 @@ import kotlinx.coroutines.flow.combine
 
 class PantryRepository(private val db: AppDatabase) {
 
-    // Flujos básicos
+    // Basic flows
     val inventoryItems = db.inventoryDao().observeAll()
     val cartItems = db.cartDao().observeAll()
     val ingredientsFlow = db.ingredientDao().observeAll()
 
-    // Combinar para obtener nombres en UI (sencillo para Iteración 1)
+    // Combine to get names in UI (simple for Iteration 1)
     data class InventoryRow(val name: String, val unit: String, val quantity: Double, val id: Long)
     data class CartRow(val name: String, val unit: String, val quantity: Double, val id: Long)
 

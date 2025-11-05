@@ -26,13 +26,13 @@ fun ActivityEditScreen(nav: NavController, entryId: Long?, vm: ActivityViewModel
     val scope = rememberCoroutineScope()
 
     Column(Modifier.padding(16.dp)) {
-        OutlinedTextField(title, { title = it }, label = { Text("Título") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(title, { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
-        OutlinedTextField(desc, { desc = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(desc, { desc = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             epoch, { epoch = it },
-            label = { Text("Fecha/hora (epoch seconds)") },
+            label = { Text("Date/time (epoch seconds)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
@@ -47,6 +47,6 @@ fun ActivityEditScreen(nav: NavController, entryId: Long?, vm: ActivityViewModel
                 }
                 nav.popBackStack()
             }
-        }) { Text("Guardar") }
+        }) { Text("Save") }
     }
 }
