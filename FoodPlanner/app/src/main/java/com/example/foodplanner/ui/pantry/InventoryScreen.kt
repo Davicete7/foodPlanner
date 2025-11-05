@@ -19,9 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
 
-
-
-
 @Composable
 fun InventoryScreen(vm: PantryViewModel = viewModel()) {
     val inv by vm.inventory.observeAsState(emptyList())
@@ -30,25 +27,17 @@ fun InventoryScreen(vm: PantryViewModel = viewModel()) {
     var ingredientToEdit by remember { mutableStateOf<InventoryRow?>(null) }
 
     Column {
-        OutlinedTextField(name, { name = it }, label = { Text("Ingrediente") })
-        OutlinedTextField(qty, { qty = it }, label = { Text("Cantidad") },
+        OutlinedTextField(name, { name = it }, label = { Text("Ingredient") })
+        OutlinedTextField(qty, { qty = it }, label = { Text("Quantity") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
         Button(onClick = {
             val q = qty.toDoubleOrNull() ?: 0.0
             if (name.isNotBlank()) vm.addOrUpdateInventory(name.trim(), q, "pcs")
             name = ""; qty = ""
-        }) { Text("Guardar") }
+        }) { Text("Save") }
 
         HorizontalDivider()
-        /*LazyColumn {
-            items(inv) { row ->
-                ListItem(
-                    headlineContent = { Text(row.name) },
-                    supportingContent = { Text("${row.quantity} ${row.unit}") }
-                )
-                HorizontalDivider()
-            }
-        }*/
+
         LazyColumn {
             items(inv) { row ->
                 InventoryRow(
@@ -62,7 +51,7 @@ fun InventoryScreen(vm: PantryViewModel = viewModel()) {
             }
         }
 
-        //If there's any ingredient slected shows the edit dialog
+        // If an ingredient is selected, show the edit dialog
         ingredientToEdit?.let { ingredient ->
             EditIngredientDialog(
                 ingredient = ingredient,
@@ -79,7 +68,7 @@ fun InventoryScreen(vm: PantryViewModel = viewModel()) {
     }
 }
 
-//Show a row with an ingridient an its options
+// Show a row with an ingredient and its options
 @Composable
 fun InventoryRow(
     item: InventoryRow,
@@ -101,21 +90,21 @@ fun InventoryRow(
 
         Box {
             IconButton(onClick = { expanded = true }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
+                Icon(Icons.Default.MoreVert, contentDescription = "Options")
             }
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("Editar") },
+                    text = { Text("Edit") },
                     onClick = {
                         expanded = false
                         onEdit(item)
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("Eliminar") },
+                    text = { Text("Delete") },
                     onClick = {
                         expanded = false
                         onDelete(item)
@@ -126,9 +115,7 @@ fun InventoryRow(
     }
 }
 
-
-
-//Dialog to modify the ingridient
+// Dialog to modify the ingredient
 @Composable
 fun EditIngredientDialog(
     ingredient: InventoryRow,
@@ -141,24 +128,24 @@ fun EditIngredientDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Editar ingrediente") },
+        title = { Text("Edit ingredient") },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nombre") }
+                    label = { Text("Name") }
                 )
                 OutlinedTextField(
                     value = qty,
                     onValueChange = { qty = it },
-                    label = { Text("Cantidad") },
+                    label = { Text("Quantity") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 OutlinedTextField(
                     value = unit,
                     onValueChange = { unit = it },
-                    label = { Text("Unidad") }
+                    label = { Text("Unit") }
                 )
             }
         },
@@ -172,15 +159,10 @@ fun EditIngredientDialog(
                         unit = unit.trim()
                     )
                 )
-            }) {
-                Text("Guardar")
-            }
+            }) { Text("Save") }
         },
         dismissButton = {
-            Button(onClick = onDismiss) { Text("Cancelar") }
+            Button(onClick = onDismiss) { Text("Cancel") }
         }
     )
 }
-
-
-

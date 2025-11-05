@@ -19,7 +19,7 @@ fun ActivityDetailScreen(nav: NavController, id: Long, vm: ActivityViewModel = v
     val scope = rememberCoroutineScope()
 
     if (entry == null) {
-        Text("No encontrado"); return
+        Text("Not found"); return
     }
 
     Column(Modifier.padding(16.dp)) {
@@ -27,14 +27,14 @@ fun ActivityDetailScreen(nav: NavController, id: Long, vm: ActivityViewModel = v
         Spacer(Modifier.height(8.dp))
         Text(entry.description)
         Spacer(Modifier.height(8.dp))
-        Text("Fecha: ${Instant.ofEpochSecond(entry.dateTimeEpochSeconds)}")
+        Text("Date: ${Instant.ofEpochSecond(entry.dateTimeEpochSeconds)}")
         Spacer(Modifier.height(16.dp))
         Row {
-            Button(onClick = { nav.navigate("activity_edit?entryId=${entry.id}") }) { Text("Editar") }
+            Button(onClick = { nav.navigate("activity_edit?entryId=${entry.id}") }) { Text("Edit") }
             Spacer(Modifier.width(8.dp))
             OutlinedButton(onClick = {
                 scope.launch { vm.delete(entry); nav.popBackStack() }
-            }) { Text("Eliminar") }
+            }) { Text("Delete") }
         }
     }
 }

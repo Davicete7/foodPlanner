@@ -26,7 +26,7 @@ fun RecipeListScreen(vm: PantryViewModel = viewModel()) {
                     Text(r.ingredients.joinToString { "${it.name} ${it.quantity}${it.unit}" })
                     Spacer(Modifier.height(8.dp))
                     Button(onClick = { vm.addRecipeMissingToCart(r) }) {
-                        Text("Añadir faltantes al carrito")
+                        Text("Add missing to cart")
                     }
                 }
             }

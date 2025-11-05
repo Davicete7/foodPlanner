@@ -32,10 +32,10 @@ fun AppNav() {
         bottomBar = {
             NavigationBar {
                 listOf(
-                    Routes.Activities to "Actividades",
-                    Routes.Inventory to "Inventario",
-                    Routes.Recipes to "Recetas",
-                    Routes.Cart to "Carrito",
+                    Routes.Activities to "Activities",
+                    Routes.Inventory to "Inventory",
+                    Routes.Recipes to "Recipes",
+                    Routes.Cart to "Cart",
                 ).forEach { (route, label) ->
                     NavigationBarItem(
                         selected = backStack?.destination?.route?.startsWith(route) ?: false,
