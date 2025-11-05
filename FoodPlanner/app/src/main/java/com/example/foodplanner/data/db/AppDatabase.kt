@@ -8,12 +8,11 @@ import com.example.foodplanner.data.db.dao.*
 import com.example.foodplanner.data.db.entities.*
 
 @Database(
-    entities = [ActivityEntry::class, Ingredient::class, InventoryItem::class, CartItem::class],
-    version = 1,
+    entities = [Ingredient::class, InventoryItem::class, CartItem::class],
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun activityDao(): ActivityEntryDao
     abstract fun ingredientDao(): IngredientDao
     abstract fun inventoryDao(): InventoryDao
     abstract fun cartDao(): CartDao
@@ -26,7 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "foodplanner.db"
-                ).build().also { INSTANCE = it }
+                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
             }
     }
 }
