@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Pasta al Pesto",
+    "ingredients": [
+      { "name": "Pasta", "quantity": 200, "unit": "g" },
+      { "name": "Pesto", "quantity": 100, "unit": "g" },
+      { "name": "Parmesan", "quantity": 30, "unit": "g" }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Tortilla de Patatas",
+    "ingredients": [
+      { "name": "Eggs", "quantity": 4, "unit": "pcs" },
+      { "name": "Potatoes", "quantity": 400, "unit": "g" },
+      { "name": "Onion", "quantity": 1, "unit": "pcs" }
+    ]
+  }
+]
