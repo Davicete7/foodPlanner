@@ -1,10 +1,12 @@
 package com.example.foodplanner.ui.pantry
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foodplanner.viewmodel.PantryViewModel
@@ -25,14 +27,14 @@ fun InventoryScreen(vm: PantryViewModel = viewModel()) {
             name = ""; qty = ""
         }) { Text("Guardar") }
 
-        Divider()
+        HorizontalDivider()
         LazyColumn {
             items(inv) { row ->
                 ListItem(
                     headlineContent = { Text(row.name) },
                     supportingContent = { Text("${row.quantity} ${row.unit}") }
                 )
-                Divider()
+                HorizontalDivider()
             }
         }
     }
