@@ -13,6 +13,10 @@ interface InventoryDao {
     @Query("""SELECT inventory.* FROM inventory WHERE ingredientId = :ingredientId LIMIT 1""")
     suspend fun findByIngredientId(ingredientId: Long): InventoryItem?
 
+    @Query("SELECT * FROM inventory WHERE id = :id LIMIT 1")
+    suspend fun findById(id: Long): InventoryItem?
+
+
     @Insert suspend fun insert(item: InventoryItem): Long
     @Update suspend fun update(item: InventoryItem)
     @Query("DELETE FROM inventory WHERE id = :id") suspend fun deleteById(id: Long)

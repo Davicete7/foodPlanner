@@ -29,4 +29,14 @@ class PantryViewModel(app: Application) : AndroidViewModel(app) {
         }
 
     fun clearCart() = viewModelScope.launch { repo.clearCart() }
+
+    fun updateInventoryItem(id: Long, newName: String, newQty: Double, newUnit: String) =
+        viewModelScope.launch {
+            repo.updateInventoryItem(id, newName, newQty, newUnit)
+        }
+
+    fun deleteInventoryItem(id: Long) =
+        viewModelScope.launch {
+            repo.deleteInventoryItem(id)
+        }
 }

@@ -3,6 +3,7 @@ package com.example.foodplanner.data.db.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.example.foodplanner.data.db.entities.Ingredient
 import kotlinx.coroutines.flow.Flow
 
@@ -19,4 +20,7 @@ interface IngredientDao {
 
     @Query("SELECT * FROM ingredients WHERE id = :id")
     suspend fun getById(id: Long): Ingredient?
+
+    @Update
+    suspend fun update(ingredient: Ingredient)
 }
