@@ -13,7 +13,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foodplanner.viewmodel.PantryViewModel
 import com.example.foodplanner.data.repo.PantryRepository.InventoryRow
-import com.example.foodplanner.data.repo.PantryRepository
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
@@ -28,7 +27,7 @@ fun InventoryScreen(vm: PantryViewModel = viewModel()) {
     val inv by vm.inventory.observeAsState(emptyList())
     var name by remember { mutableStateOf("") }
     var qty by remember { mutableStateOf("") }
-    var ingredientToEdit by remember { mutableStateOf<PantryRepository.InventoryRow?>(null) }
+    var ingredientToEdit by remember { mutableStateOf<InventoryRow?>(null) }
 
     Column {
         OutlinedTextField(name, { name = it }, label = { Text("Ingrediente") })
