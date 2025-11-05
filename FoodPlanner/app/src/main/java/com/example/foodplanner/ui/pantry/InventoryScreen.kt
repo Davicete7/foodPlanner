@@ -63,13 +63,16 @@ fun InventoryScreen(vm: PantryViewModel = viewModel()) {
             }
         }
 
-        //If there's any ingredient slectedm shows the edit dialog
+        //If there's any ingredient slected shows the edit dialog
         ingredientToEdit?.let { ingredient ->
             EditIngredientDialog(
                 ingredient = ingredient,
                 onDismiss = { ingredientToEdit = null },
                 onSave = { updatedItem ->
-                    vm.addOrUpdateInventory(updatedItem.name, updatedItem.quantity, updatedItem.unit)
+                    vm.updateInventoryItem(updatedItem.id,
+                        updatedItem.name,
+                        updatedItem.quantity,
+                        updatedItem.unit)
                     ingredientToEdit = null
                 }
             )
