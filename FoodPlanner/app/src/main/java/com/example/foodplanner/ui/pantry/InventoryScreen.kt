@@ -1,5 +1,7 @@
 package com.example.foodplanner.ui.pantry
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,21 +20,51 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.rotate
+import androidx.compose.foundation.shape.RoundedCornerShape
+
+
+
+
+
+val availableUnits = listOf("kg", "gr", "L", "mL", "pcs")
 
 @Composable
 fun InventoryScreen(vm: PantryViewModel = viewModel()) {
     val inv by vm.inventory.observeAsState(emptyList())
     var name by remember { mutableStateOf("") }
     var qty by remember { mutableStateOf("") }
+
+    var unit by remember { mutableStateOf("pcs") }
+
     var ingredientToEdit by remember { mutableStateOf<InventoryRow?>(null) }
 
     Column {
         OutlinedTextField(name, { name = it }, label = { Text("Ingredient") })
         OutlinedTextField(qty, { qty = it }, label = { Text("Quantity") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Unidad",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+        )
+        UnitSelector(
+            selectedUnit = unit,
+            availableUnits = availableUnits,
+            onUnitSelected = { unit = it }
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Button(onClick = {
             val q = qty.toDoubleOrNull() ?: 0.0
-            if (name.isNotBlank()) vm.addOrUpdateInventory(name.trim(), q, "pcs")
+            if (name.isNotBlank()) vm.addOrUpdateInventory(name.trim(), q, unit)
             name = ""; qty = ""
         }) { Text("Save") }
 
@@ -67,6 +99,52 @@ fun InventoryScreen(vm: PantryViewModel = viewModel()) {
         }
     }
 }
+
+@Composable
+fun UnitSelector(
+    selectedUnit: String,
+    availableUnits: List<String>,
+    onUnitSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 12.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = selectedUnit)
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = null,
+                modifier = Modifier.rotate(if (expanded) 180f else 0f)
+            )
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            availableUnits.forEach { unit ->
+                DropdownMenuItem(
+                    text = { Text(unit) },
+                    onClick = {
+                        onUnitSelected(unit)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+
+
 
 // Show a row with an ingredient and its options
 @Composable
@@ -142,11 +220,20 @@ fun EditIngredientDialog(
                     label = { Text("Quantity") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
-                OutlinedTextField(
-                    value = unit,
-                    onValueChange = { unit = it },
-                    label = { Text("Unit") }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Unit",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                 )
+
+                UnitSelector(
+                    selectedUnit = unit,
+                    availableUnits = availableUnits,
+                    onUnitSelected = { unit = it }
+                )
+
             }
         },
         confirmButton = {
