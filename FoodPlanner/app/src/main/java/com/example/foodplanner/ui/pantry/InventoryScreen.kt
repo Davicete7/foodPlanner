@@ -31,7 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 
 
 
-val availableUnits = listOf("kg", "gr", "L", "mL", "pcs")
+val availableUnits = listOf("kg", "g", "L", "mL", "pcs")
 
 @Composable
 fun InventoryScreen(vm: PantryViewModel = viewModel()) {

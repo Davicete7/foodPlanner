@@ -16,6 +16,9 @@ interface CartDao {
     @Query("DELETE FROM cart") suspend fun clear()
     @Query("SELECT * FROM cart WHERE ingredientId = :ingredientId LIMIT 1")
     suspend fun findByIngredientId(ingredientId: Long): CartItem?
+
+    @Query("SELECT * FROM cart WHERE id = :id LIMIT 1")
+    suspend fun findById(id: Long): CartItem?
 }
 
 data class CartWithIngredient(

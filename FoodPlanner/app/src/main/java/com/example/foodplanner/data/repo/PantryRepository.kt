@@ -82,4 +82,19 @@ class PantryRepository(private val db: AppDatabase) {
         val item = db.inventoryDao().findById(id) ?: return
         db.inventoryDao().deleteById(id)
     }
+
+    suspend fun updateCartItem(id: Long, newName: String, newQty: Double, newUnit: String) {
+        val item = db.cartDao().findById(id) ?: return
+        db.cartDao().update(item.copy(quantity = newQty))
+        val ingredient = db.ingredientDao().getById(item.ingredientId) ?: return
+        db.ingredientDao().update(ingredient.copy(name = newName, unit = newUnit))
+    }
+
+    suspend fun deleteCartItem(id: Long) {
+        val item = db.cartDao().findById(id) ?: return
+        db.cartDao().deleteById(id)
+    }
+
+
+
 }
