@@ -8,5 +8,6 @@ data class InventoryItem(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val ingredientId: Long,
     val quantity: Double = 0.0,
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val expirationDate: Long? = null
 )

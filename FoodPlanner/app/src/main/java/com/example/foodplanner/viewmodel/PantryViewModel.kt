@@ -20,8 +20,8 @@ class PantryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { recipes.postValue(recipeRepo.loadAll()) }
     }
 
-    fun addOrUpdateInventory(name: String, qty: Double, unit: String) =
-        viewModelScope.launch { repo.addOrUpdateInventory(name, qty, unit) }
+    fun addOrUpdateInventory(name: String, qty: Double, unit: String, expirationDate: Long?) =
+        viewModelScope.launch { repo.addOrUpdateInventory(name, qty, unit, expirationDate) }
 
     fun addRecipeMissingToCart(recipe: RecipeDTO) =
         viewModelScope.launch {
@@ -30,9 +30,9 @@ class PantryViewModel(app: Application) : AndroidViewModel(app) {
 
     fun clearCart() = viewModelScope.launch { repo.clearCart() }
 
-    fun updateInventoryItem(id: Long, newName: String, newQty: Double, newUnit: String) =
+    fun updateInventoryItem(id: Long, newName: String, newQty: Double, newUnit: String, newExpirationDate: Long?) =
         viewModelScope.launch {
-            repo.updateInventoryItem(id, newName, newQty, newUnit)
+            repo.updateInventoryItem(id, newName, newQty, newUnit, newExpirationDate)
         }
 
     fun deleteInventoryItem(id: Long) =

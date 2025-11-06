@@ -20,6 +20,15 @@ interface InventoryDao {
     @Insert suspend fun insert(item: InventoryItem): Long
     @Update suspend fun update(item: InventoryItem)
     @Query("DELETE FROM inventory WHERE id = :id") suspend fun deleteById(id: Long)
+
+    //Get all the expired Items
+    @Query("SELECT * FROM inventory WHERE expirationDate < :currentTime")
+    suspend fun getExpiredItems(currentTime: Long = System.currentTimeMillis()): List<InventoryItem>
+
+    //Order by the closest expiration date
+    @Query("SELECT * FROM inventory ORDER BY expirationDate ASC")
+    fun observeAllByExpiration(): Flow<List<InventoryItem>>
+
 }
 
 data class InventoryWithIngredient(

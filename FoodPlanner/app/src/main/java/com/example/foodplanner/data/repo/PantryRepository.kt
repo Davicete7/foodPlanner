@@ -15,7 +15,7 @@ class PantryRepository(private val db: AppDatabase) {
     val ingredientsFlow = db.ingredientDao().observeAll()
 
     // Combine to get names in UI (simple for Iteration 1)
-    data class InventoryRow(val name: String, val unit: String, val quantity: Double, val id: Long)
+    data class InventoryRow(val name: String, val unit: String, val quantity: Double, val id: Long, val expirationDate: Long? = null)
     data class CartRow(val name: String, val unit: String, val quantity: Double, val id: Long)
 
     val inventory: Flow<List<InventoryRow>> =
@@ -23,7 +23,7 @@ class PantryRepository(private val db: AppDatabase) {
             val map = ingredients.associateBy { it.id }
             inv.map { item ->
                 val ing = map[item.ingredientId]
-                InventoryRow(ing?.name ?: "?", ing?.unit ?: "pcs", item.quantity, item.id)
+                InventoryRow(ing?.name ?: "?", ing?.unit ?: "pcs", item.quantity, item.id, item.expirationDate)
             }.sortedBy { it.name.lowercase() }
         }
 
@@ -43,13 +43,13 @@ class PantryRepository(private val db: AppDatabase) {
         return db.ingredientDao().getById(id)!!
     }
 
-    suspend fun addOrUpdateInventory(name: String, quantity: Double, unit: String = "pcs") {
+    suspend fun addOrUpdateInventory(name: String, quantity: Double, unit: String = "pcs", expirationDate: Long? = null) {
         val ing = upsertIngredientByName(name, unit)
         val existing = db.inventoryDao().findByIngredientId(ing.id)
         if (existing == null) {
-            db.inventoryDao().insert(InventoryItem(ingredientId = ing.id, quantity = quantity))
+            db.inventoryDao().insert(InventoryItem(ingredientId = ing.id, quantity = quantity, expirationDate = expirationDate))
         } else {
-            db.inventoryDao().update(existing.copy(quantity = quantity))
+            db.inventoryDao().update(existing.copy(quantity = quantity, expirationDate = expirationDate))
         }
     }
 
@@ -71,9 +71,9 @@ class PantryRepository(private val db: AppDatabase) {
 
     suspend fun clearCart() = db.cartDao().clear()
 
-    suspend fun updateInventoryItem(id: Long, newName: String, newQty: Double, newUnit: String) {
+    suspend fun updateInventoryItem(id: Long, newName: String, newQty: Double, newUnit: String, expirationDate: Long? = null) {
         val item = db.inventoryDao().findById(id) ?: return
-        db.inventoryDao().update(item.copy(quantity = newQty))
+        db.inventoryDao().update(item.copy(quantity = newQty, expirationDate = expirationDate))
         val ingredient = db.ingredientDao().getById(item.ingredientId) ?: return
         db.ingredientDao().update(ingredient.copy(name = newName, unit = newUnit))
     }

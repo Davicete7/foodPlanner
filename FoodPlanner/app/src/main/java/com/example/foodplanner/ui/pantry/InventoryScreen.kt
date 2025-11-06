@@ -26,9 +26,12 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.rotate
 import androidx.compose.foundation.shape.RoundedCornerShape
-
-
-
+import android.app.DatePickerDialog
+import androidx.compose.ui.platform.LocalContext
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 
 val availableUnits = listOf("kg", "g", "L", "mL", "pcs")
@@ -38,8 +41,9 @@ fun InventoryScreen(vm: PantryViewModel = viewModel()) {
     val inv by vm.inventory.observeAsState(emptyList())
     var name by remember { mutableStateOf("") }
     var qty by remember { mutableStateOf("") }
-
     var unit by remember { mutableStateOf("pcs") }
+    var expirationDate by remember { mutableStateOf<Long?>(null) } // fecha en milisegundos
+
 
     var ingredientToEdit by remember { mutableStateOf<InventoryRow?>(null) }
 
@@ -62,10 +66,23 @@ fun InventoryScreen(vm: PantryViewModel = viewModel()) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        Text(
+            text = "Expiration Date",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+        )
+        DateSelector(
+            selectedDate = expirationDate,
+            onDateSelected = { expirationDate = it }
+        )
+
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Button(onClick = {
             val q = qty.toDoubleOrNull() ?: 0.0
-            if (name.isNotBlank()) vm.addOrUpdateInventory(name.trim(), q, unit)
-            name = ""; qty = ""
+            if (name.isNotBlank()) vm.addOrUpdateInventory(name.trim(), q, unit, expirationDate)
+            name = ""; qty = ""; unit = "pcs"; expirationDate = null;
         }) { Text("Save") }
 
         HorizontalDivider()
@@ -92,7 +109,8 @@ fun InventoryScreen(vm: PantryViewModel = viewModel()) {
                     vm.updateInventoryItem(updatedItem.id,
                         updatedItem.name,
                         updatedItem.quantity,
-                        updatedItem.unit)
+                        updatedItem.unit,
+                        updatedItem.expirationDate)
                     ingredientToEdit = null
                 }
             )
@@ -142,6 +160,55 @@ fun UnitSelector(
         }
     }
 }
+@Composable
+fun DateSelector(
+    selectedDate: Long?,
+    onDateSelected: (Long) -> Unit
+) {
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    val displayText = selectedDate?.let {
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(it))
+    } ?: "dd/MM/yyyy" // placeholder
+
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                RoundedCornerShape(4.dp)
+            )
+            .clickable {
+                val picker = DatePickerDialog(
+                    context,
+                    { _, year, month, dayOfMonth ->
+                        calendar.set(year, month, dayOfMonth)
+                        onDateSelected(calendar.timeInMillis)
+                    },
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH),
+                    calendar.get(Calendar.DAY_OF_MONTH)
+                )
+                picker.show()
+            }
+            .padding(horizontal = 12.dp, vertical = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = displayText)
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = null
+            )
+        }
+    }
+}
 
 
 
@@ -164,6 +231,14 @@ fun InventoryRow(
         Column {
             Text(item.name, style = MaterialTheme.typography.bodyLarge)
             Text("${item.quantity} ${item.unit}", style = MaterialTheme.typography.bodyMedium)
+
+            val expiryText = if (item.expirationDate != null) {
+                SimpleDateFormat("dd/MM/yyyy").format(Date(item.expirationDate))
+            } else {
+                "None"
+            }
+
+            Text("Expiration Date: $expiryText", style = MaterialTheme.typography.bodyMedium)
         }
 
         Box {
@@ -203,6 +278,7 @@ fun EditIngredientDialog(
     var name by remember { mutableStateOf(ingredient.name) }
     var qty by remember { mutableStateOf(ingredient.quantity.toString()) }
     var unit by remember { mutableStateOf(ingredient.unit) }
+    var expirationDate by remember { mutableStateOf(ingredient.expirationDate) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -234,6 +310,17 @@ fun EditIngredientDialog(
                     onUnitSelected = { unit = it }
                 )
 
+                Text(
+                    text = "Expiration Date",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                )
+                DateSelector(
+                    selectedDate = expirationDate,
+                    onDateSelected = { expirationDate = it }
+                )
+
+
             }
         },
         confirmButton = {
@@ -243,7 +330,8 @@ fun EditIngredientDialog(
                     ingredient.copy(
                         name = name.trim(),
                         quantity = quantityDouble,
-                        unit = unit.trim()
+                        unit = unit.trim(),
+                        expirationDate = expirationDate
                     )
                 )
             }) { Text("Save") }
