@@ -2,7 +2,7 @@ package com.example.foodplanner.ui.nav
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,7 +34,7 @@ fun AppNav() {
                     NavigationBarItem(
                         selected = backStack?.destination?.route?.startsWith(route) ?: false,
                         onClick = { nav.navigate(route) { launchSingleTop = true } },
-                        icon = { Icon(Icons.Default.List, contentDescription = null) },
+                        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
                         label = { Text(label) }
                     )
                 }
