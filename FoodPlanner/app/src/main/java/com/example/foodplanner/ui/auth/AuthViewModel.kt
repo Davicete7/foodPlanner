@@ -1,6 +1,6 @@
 package com.example.foodplanner.ui.auth
 
-import android.content.Intent
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodplanner.data.User
@@ -41,12 +41,26 @@ class AuthViewModel : ViewModel() {
     init {
         auth.addAuthStateListener { firebaseAuth ->
             viewModelScope.launch {
-                if (firebaseAuth.currentUser != null) {
-                    _user.value = userRepository.getUser(firebaseAuth.currentUser!!.uid)
-                    _authState.value = AuthState.Authenticated
-                } else {
-                    _user.value = null
-                    _authState.value = AuthState.Unauthenticated
+                try {
+                    if (firebaseAuth.currentUser != null) {
+                        // Intenta obtener datos del usuario de Firestore
+                        val firestoreUser = userRepository.getUser(firebaseAuth.currentUser!!.uid)
+                        _user.value = firestoreUser
+                        _authState.value = AuthState.Authenticated
+                    } else {
+                        _user.value = null
+                        _authState.value = AuthState.Unauthenticated
+                    }
+                } catch (e: Exception) {
+                    Log.e("AuthViewModel", "Error al obtener usuario: ${e.message}")
+                    // Aunque falle Firestore, si hay usuario en Auth, lo consideramos autenticado parcialmente
+                    // o podrías enviarlo a Error si prefieres bloquear el acceso.
+                    // Aquí mantenemos el estado basado en si firebaseAuth tiene usuario:
+                    if (firebaseAuth.currentUser != null) {
+                        _authState.value = AuthState.Authenticated
+                    } else {
+                        _authState.value = AuthState.Unauthenticated
+                    }
                 }
             }
         }
@@ -59,11 +73,12 @@ class AuthViewModel : ViewModel() {
                 val authResult = auth.signInWithCredential(credential).await()
                 authResult?.user?.let { firebaseUser ->
                     val user = User(uid = firebaseUser.uid, email = firebaseUser.email ?: "")
-                    userRepository.createUser(user) // This will create or update the user
+                    userRepository.createUser(user) // Esto crea o actualiza el usuario
                 }
                 _googleSignInState.value = GoogleSignInState(isSignInSuccessful = true)
             } catch (e: Exception) {
                 _googleSignInState.value = GoogleSignInState(signInError = e.message)
+                _authState.value = AuthState.Unauthenticated
             }
         }
     }
