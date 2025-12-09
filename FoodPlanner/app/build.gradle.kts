@@ -73,4 +73,16 @@ dependencies {
     implementation("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
     ksp("androidx.room:room-compiler:$room_version")
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.analytics)
+    implementation(libs.play.services.tasks)
+
+    // Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:21.1.0")
 }
+
+apply(plugin = "com.google.gms.google-services")
