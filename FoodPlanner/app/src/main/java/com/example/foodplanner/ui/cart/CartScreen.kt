@@ -11,15 +11,14 @@ import com.example.foodplanner.viewmodel.PantryViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.foodplanner.data.db.entities.CartItem
-import com.example.foodplanner.ui.pantry.UnitSelector
+import com.example.foodplanner.ui.components.UnitSelector
+import com.example.foodplanner.ui.components.availableUnits
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.text.input.KeyboardType
-
-val availableUnits = listOf("kg", "g", "L", "mL", "pcs")
 
 @Composable
 fun CartScreen(vm: PantryViewModel = viewModel()) {

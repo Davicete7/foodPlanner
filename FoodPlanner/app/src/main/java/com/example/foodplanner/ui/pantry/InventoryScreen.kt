@@ -29,148 +29,115 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import android.app.DatePickerDialog
 import androidx.compose.ui.platform.LocalContext
 import com.example.foodplanner.ui.auth.AuthViewModel
+import com.example.foodplanner.ui.components.UnitSelector
+import com.example.foodplanner.ui.components.availableUnits
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-
-
-val availableUnits = listOf("kg", "g", "L", "mL", "pcs")
 
 @Composable
 fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
     val userState by authViewModel.user.collectAsState()
     val context = LocalContext.current
 
-    userState?.let { user ->
-        val factory = PantryViewModel.Factory(context.applicationContext as Application, user.uid)
-        val vm: PantryViewModel = viewModel(factory = factory)
+    if (userState == null) {
+        CircularProgressIndicator()
+    } else {
+        userState?.let { user ->
+            val factory = PantryViewModel.Factory(context.applicationContext as Application, user.uid)
+            val vm: PantryViewModel = viewModel(factory = factory)
 
-        val inv by vm.inventory.collectAsState()
-        var name by remember { mutableStateOf("") }
-        var qty by remember { mutableStateOf("") }
-        var unit by remember { mutableStateOf("pcs") }
-        var expirationDate by remember { mutableStateOf<Long?>(null) } // fecha en milisegundos
-
-
-        var ingredientToEdit by remember { mutableStateOf<InventoryItem?>(null) }
-
-        Column {
-            OutlinedTextField(name, { name = it }, label = { Text("Ingredient") })
-            OutlinedTextField(qty, { qty = it }, label = { Text("Quantity") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Unidad",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-            )
-            UnitSelector(
-                selectedUnit = unit,
-                availableUnits = availableUnits,
-                onUnitSelected = { unit = it }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Expiration Date",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
-            )
-            DateSelector(
-                selectedDate = expirationDate,
-                onDateSelected = { expirationDate = it }
-            )
+            val inv by vm.inventory.collectAsState()
+            var name by remember { mutableStateOf("") }
+            var qty by remember { mutableStateOf("") }
+            var unit by remember { mutableStateOf("pcs") }
+            var expirationDate by remember { mutableStateOf<Long?>(null) } // fecha en milisegundos
 
 
-            Spacer(modifier = Modifier.height(8.dp))
+            var ingredientToEdit by remember { mutableStateOf<InventoryItem?>(null) }
 
-            Button(onClick = {
-                val q = qty.toDoubleOrNull() ?: 0.0
-                if (name.isNotBlank()) vm.addOrUpdateInventory(name.trim(), q, unit, expirationDate)
-                name = ""; qty = ""; unit = "pcs"; expirationDate = null;
-            }) { Text("Save") }
+            Column {
+                OutlinedTextField(name, { name = it }, label = { Text("Ingredient") })
+                OutlinedTextField(
+                    qty, { qty = it }, label = { Text("Quantity") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
 
-            HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Unidad",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                )
+                UnitSelector(
+                    selectedUnit = unit,
+                    availableUnits = availableUnits,
+                    onUnitSelected = { unit = it }
+                )
 
-            LazyColumn {
-                items(inv) { row ->
-                    InventoryRow(
-                        item = row,
-                        onEdit = { editedItem ->
-                            ingredientToEdit = editedItem },
-                        onDelete = { deletedItem ->
-                            deletedItem.id?.let { vm.deleteInventoryItem(it) } }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Expiration Date",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                )
+                DateSelector(
+                    selectedDate = expirationDate,
+                    onDateSelected = { expirationDate = it }
+                )
+
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(onClick = {
+                    val q = qty.toDoubleOrNull() ?: 0.0
+                    if (name.isNotBlank()) vm.addOrUpdateInventory(name.trim(), q, unit, expirationDate)
+                    name = ""; qty = ""; unit = "pcs"; expirationDate = null;
+                }) { Text("Save") }
+
+                HorizontalDivider()
+
+                LazyColumn {
+                    items(inv) { row ->
+                        InventoryRow(
+                            item = row,
+                            onEdit = { editedItem ->
+                                ingredientToEdit = editedItem
+                            },
+                            onDelete = { deletedItem ->
+                                deletedItem.id?.let { vm.deleteInventoryItem(it) }
+                            }
+                        )
+                        HorizontalDivider()
+                    }
+                }
+
+                // If an ingredient is selected, show the edit dialog
+                ingredientToEdit?.let { ingredient ->
+                    EditIngredientDialog(
+                        ingredient = ingredient,
+                        onDismiss = { ingredientToEdit = null },
+                        onSave = { updatedItem ->
+                            updatedItem.id?.let {
+                                vm.updateInventoryItem(
+                                    it,
+                                    updatedItem.name,
+                                    updatedItem.quantity,
+                                    updatedItem.unit,
+                                    updatedItem.expirationDate
+                                )
+                            }
+                            ingredientToEdit = null
+                        }
                     )
-                    HorizontalDivider()
                 }
             }
-
-            // If an ingredient is selected, show the edit dialog
-            ingredientToEdit?.let { ingredient ->
-                EditIngredientDialog(
-                    ingredient = ingredient,
-                    onDismiss = { ingredientToEdit = null },
-                    onSave = { updatedItem ->
-                        updatedItem.id?.let {
-                            vm.updateInventoryItem(it,
-                                updatedItem.name,
-                                updatedItem.quantity,
-                                updatedItem.unit,
-                                updatedItem.expirationDate)
-                        }
-                        ingredientToEdit = null
-                    }
-                )
-            }
         }
     }
 }
 
-@Composable
-fun UnitSelector(
-    selectedUnit: String,
-    availableUnits: List<String>,
-    onUnitSelected: (String) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                .clickable { expanded = !expanded }
-                .padding(horizontal = 12.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(text = selectedUnit)
-            Icon(
-                imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = null,
-                modifier = Modifier.rotate(if (expanded) 180f else 0f)
-            )
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            availableUnits.forEach { unit ->
-                DropdownMenuItem(
-                    text = { Text(unit) },
-                    onClick = {
-                        onUnitSelected(unit)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}
 @Composable
 fun DateSelector(
     selectedDate: Long?,
