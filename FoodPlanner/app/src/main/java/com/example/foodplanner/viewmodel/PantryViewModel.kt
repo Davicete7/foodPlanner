@@ -1,23 +1,38 @@
 package com.example.foodplanner.viewmodel
 
 import android.app.Application
-import androidx.lifecycle.*
-import com.example.foodplanner.data.db.AppDatabase
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.foodplanner.data.db.entities.CartItem
+import com.example.foodplanner.data.db.entities.InventoryItem
 import com.example.foodplanner.data.recipes.RecipeDTO
 import com.example.foodplanner.data.recipes.RecipeRepository
 import com.example.foodplanner.data.repo.PantryRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-class PantryViewModel(app: Application) : AndroidViewModel(app) {
-    private val repo = PantryRepository(AppDatabase.get(app))
+class PantryViewModel(app: Application, private val userId: String) : AndroidViewModel(app) {
+    private val repo = PantryRepository(userId)
     private val recipeRepo = RecipeRepository(app)
 
-    val inventory = repo.inventory.asLiveData()
-    val cart = repo.cart.asLiveData()
-    val recipes = MutableLiveData<List<RecipeDTO>>(emptyList())
+    private val _inventory = MutableStateFlow<List<InventoryItem>>(emptyList())
+    val inventory: StateFlow<List<InventoryItem>> = _inventory.asStateFlow()
+
+    private val _cart = MutableStateFlow<List<CartItem>>(emptyList())
+    val cart: StateFlow<List<CartItem>> = _cart.asStateFlow()
+
+    val recipes = MutableStateFlow<List<RecipeDTO>>(emptyList())
 
     init {
-        viewModelScope.launch { recipes.postValue(recipeRepo.loadAll()) }
+        repo.inventory.onEach { _inventory.value = it }.launchIn(viewModelScope)
+        repo.cart.onEach { _cart.value = it }.launchIn(viewModelScope)
+        viewModelScope.launch { recipes.value = recipeRepo.loadAll() }
     }
 
     fun addOrUpdateInventory(name: String, qty: Double, unit: String, expirationDate: Long?) =
@@ -30,24 +45,27 @@ class PantryViewModel(app: Application) : AndroidViewModel(app) {
 
     fun clearCart() = viewModelScope.launch { repo.clearCart() }
 
-    fun updateInventoryItem(id: Long, newName: String, newQty: Double, newUnit: String, newExpirationDate: Long?) =
+    fun updateInventoryItem(id: String, newName: String, newQty: Double, newUnit: String, newExpirationDate: Long?) =
         viewModelScope.launch {
             repo.updateInventoryItem(id, newName, newQty, newUnit, newExpirationDate)
         }
 
-    fun deleteInventoryItem(id: Long) =
-        viewModelScope.launch {
-            repo.deleteInventoryItem(id)
-        }
+    fun deleteInventoryItem(id: String) =
+        viewModelScope.launch { repo.deleteInventoryItem(id) }
 
-    fun updateCartItem(id: Long, newName: String, newQty: Double, newUnit: String) =
-        viewModelScope.launch {
-            repo.updateCartItem(id, newName, newQty, newUnit)
-        }
+    fun updateCartItem(id: String, newName: String, newQty: Double, newUnit: String) =
+        viewModelScope.launch { repo.updateCartItem(id, newName, newQty, newUnit) }
 
-    fun deleteCartItem(id: Long) =
-        viewModelScope.launch {
-            repo.deleteCartItem(id)
-        }
+    fun deleteCartItem(id: String) =
+        viewModelScope.launch { repo.deleteCartItem(id) }
 
+    class Factory(private val app: Application, private val userId: String) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(PantryViewModel::class.java)) {
+                @Suppress("UNCHECKED_CAST")
+                return PantryViewModel(app, userId) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
 }

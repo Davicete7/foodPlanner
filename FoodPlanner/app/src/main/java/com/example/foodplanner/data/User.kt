@@ -7,5 +7,6 @@ data class User(
     val uid: String = "",
     val email: String = "",
     val ingredients: List<String> = emptyList(),
-    val cart: List<String> = emptyList()
+    val cart: List<String> = emptyList(),
+    val recipes: List<String> = emptyList()
 )

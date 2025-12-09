@@ -1,13 +1,18 @@
 package com.example.foodplanner.data.db.entities
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.ServerTimestamp
+import java.util.Date
 
-@Entity(tableName = "inventory")
 data class InventoryItem(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val ingredientId: Long,
+    @DocumentId var id: String? = null,
+    val name: String = "",
+    val searchableName: String = "",
     val quantity: Double = 0.0,
-    val updatedAt: Long = System.currentTimeMillis(),
-    val expirationDate: Long? = null
-)
+    val unit: String = "pcs",
+    val expirationDate: Long? = null,
+    @ServerTimestamp val updatedAt: Date? = null
+) {
+    // No-arg constructor for Firestore
+    constructor() : this(null, "", "", 0.0, "pcs", null, null)
+}

@@ -1,100 +1,157 @@
 package com.example.foodplanner.data.repo
 
-import com.example.foodplanner.data.db.AppDatabase
 import com.example.foodplanner.data.db.entities.CartItem
-import com.example.foodplanner.data.db.entities.Ingredient
 import com.example.foodplanner.data.db.entities.InventoryItem
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.snapshots
+import com.example.foodplanner.utils.await
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
-class PantryRepository(private val db: AppDatabase) {
+class PantryRepository(private val userId: String) {
 
-    // Basic flows
-    val inventoryItems = db.inventoryDao().observeAll()
-    val cartItems = db.cartDao().observeAll()
-    val ingredientsFlow = db.ingredientDao().observeAll()
+    private val db = FirebaseFirestore.getInstance()
+    private val userInventory = db.collection("users").document(userId).collection("inventory")
+    private val userCart = db.collection("users").document(userId).collection("cart")
 
-    // Combine to get names in UI (simple for Iteration 1)
-    data class InventoryRow(val name: String, val unit: String, val quantity: Double, val id: Long, val expirationDate: Long? = null)
-    data class CartRow(val name: String, val unit: String, val quantity: Double, val id: Long)
-
-    val inventory: Flow<List<InventoryRow>> =
-        combine(inventoryItems, ingredientsFlow) { inv, ingredients ->
-            val map = ingredients.associateBy { it.id }
-            inv.map { item ->
-                val ing = map[item.ingredientId]
-                InventoryRow(ing?.name ?: "?", ing?.unit ?: "pcs", item.quantity, item.id, item.expirationDate)
-            }.sortedBy { it.name.lowercase() }
-        }
-
-    val cart: Flow<List<CartRow>> =
-        combine(cartItems, ingredientsFlow) { cart, ingredients ->
-            val map = ingredients.associateBy { it.id }
-            cart.map { item ->
-                val ing = map[item.ingredientId]
-                CartRow(ing?.name ?: "?", ing?.unit ?: "pcs", item.quantity, item.id)
-            }.sortedBy { it.name.lowercase() }
-        }
-
-    // Helpers
-    private suspend fun upsertIngredientByName(name: String, unit: String = "pcs"): Ingredient {
-        db.ingredientDao().findByName(name)?.let { return it }
-        val id = db.ingredientDao().insert(Ingredient(name = name, unit = unit))
-        return db.ingredientDao().getById(id)!!
+    val inventory: Flow<List<InventoryItem>> = userInventory.snapshots().map {
+        it.toObjects(InventoryItem::class.java)
     }
 
-    suspend fun addOrUpdateInventory(name: String, quantity: Double, unit: String = "pcs", expirationDate: Long? = null) {
-        val ing = upsertIngredientByName(name, unit)
-        val existing = db.inventoryDao().findByIngredientId(ing.id)
-        if (existing == null) {
-            db.inventoryDao().insert(InventoryItem(ingredientId = ing.id, quantity = quantity, expirationDate = expirationDate))
+    val cart: Flow<List<CartItem>> = userCart.snapshots().map {
+        it.toObjects(CartItem::class.java)
+    }
+
+    /**
+     * Añadir o actualizar un item de inventario por nombre (searchableName).
+     * Se ha eliminado el uso incorrecto de transaction.get(query),
+     * que no está soportado. Ahora se hace un get normal y luego se actualiza.
+     */
+    suspend fun addOrUpdateInventory(
+        name: String,
+        quantity: Double,
+        unit: String,
+        expirationDate: Long?
+    ) {
+        val searchableName = name.lowercase()
+
+        // Primero buscamos si ya existe un documento con ese searchableName
+        val snapshot = userInventory
+            .whereEqualTo("searchableName", searchableName)
+            .limit(1)
+            .get()
+            .await()
+
+        if (snapshot == null || snapshot.isEmpty) {
+            // Crear nuevo documento
+            val newItemRef = userInventory.document()
+            val newItem = InventoryItem(
+                name = name,
+                searchableName = searchableName,
+                quantity = quantity,
+                unit = unit,
+                expirationDate = expirationDate
+            )
+            newItemRef.set(newItem).await()
         } else {
-            db.inventoryDao().update(existing.copy(quantity = quantity, expirationDate = expirationDate))
+            // Actualizar documento existente (aquí puedes decidir qué campos actualizar)
+            val docRef = snapshot.documents.first().reference
+            val updates = mutableMapOf<String, Any>(
+                "name" to name,
+                "searchableName" to searchableName,
+                "quantity" to quantity,
+                "unit" to unit
+            )
+            expirationDate?.let { updates["expirationDate"] = it }
+            docRef.update(updates).await()
         }
     }
 
     suspend fun addMissingToCart(need: List<Triple<String, Double, String>>) {
+        val currentInventory = inventory.first().associateBy { it.searchableName }
+        val currentCart = cart.first().associateBy { it.searchableName }
+        val batch = db.batch()
+
         for ((name, qty, unit) in need) {
-            val ing = upsertIngredientByName(name, unit)
-            val have = db.inventoryDao().findByIngredientId(ing.id)?.quantity ?: 0.0
+            val searchableName = name.lowercase()
+            val have = currentInventory[searchableName]?.quantity ?: 0.0
             val missing = (qty - have).coerceAtLeast(0.0)
+
             if (missing > 0) {
-                val existing = db.cartDao().findByIngredientId(ing.id)
-                if (existing == null) {
-                    db.cartDao().insert(CartItem(ingredientId = ing.id, quantity = missing))
+                val existingCartItem = currentCart[searchableName]
+                if (existingCartItem == null) {
+                    val newCartItemRef = userCart.document()
+                    batch.set(
+                        newCartItemRef,
+                        CartItem(
+                            name = name,
+                            searchableName = searchableName,
+                            quantity = missing,
+                            unit = unit
+                        )
+                    )
                 } else {
-                    db.cartDao().update(existing.copy(quantity = existing.quantity + missing))
+                    existingCartItem.id?.let {
+                        val docRef = userCart.document(it)
+                        val newQty = existingCartItem.quantity + missing
+                        batch.update(docRef, "quantity", newQty)
+                    }
                 }
             }
         }
+        batch.commit().await()
     }
 
-    suspend fun clearCart() = db.cartDao().clear()
-
-    suspend fun updateInventoryItem(id: Long, newName: String, newQty: Double, newUnit: String, expirationDate: Long? = null) {
-        val item = db.inventoryDao().findById(id) ?: return
-        db.inventoryDao().update(item.copy(quantity = newQty, expirationDate = expirationDate))
-        val ingredient = db.ingredientDao().getById(item.ingredientId) ?: return
-        db.ingredientDao().update(ingredient.copy(name = newName, unit = newUnit))
+    suspend fun clearCart() {
+        val batch = db.batch()
+        val allCartItems = userCart.get().await()
+        allCartItems?.let {
+            for (doc in it.documents) {
+                batch.delete(doc.reference)
+            }
+        }
+        batch.commit().await()
     }
 
-    suspend fun deleteInventoryItem(id: Long) {
-        val item = db.inventoryDao().findById(id) ?: return
-        db.inventoryDao().deleteById(id)
+    /**
+     * Importante: el Map pasado a update tiene que ser Map<String, Any>,
+     * no Map<String, Any?>. Construimos el mapa sin nulos y sólo añadimos
+     * expirationDate si no es null.
+     */
+    suspend fun updateInventoryItem(
+        id: String,
+        newName: String,
+        newQty: Double,
+        newUnit: String,
+        newExpirationDate: Long?
+    ) {
+        val updates = mutableMapOf<String, Any>(
+            "name" to newName,
+            "searchableName" to newName.lowercase(),
+            "quantity" to newQty,
+            "unit" to newUnit
+        )
+        newExpirationDate?.let { updates["expirationDate"] = it }
+
+        userInventory.document(id).update(updates).await()
     }
 
-    suspend fun updateCartItem(id: Long, newName: String, newQty: Double, newUnit: String) {
-        val item = db.cartDao().findById(id) ?: return
-        db.cartDao().update(item.copy(quantity = newQty))
-        val ingredient = db.ingredientDao().getById(item.ingredientId) ?: return
-        db.ingredientDao().update(ingredient.copy(name = newName, unit = newUnit))
+    suspend fun deleteInventoryItem(id: String) {
+        userInventory.document(id).delete().await()
     }
 
-    suspend fun deleteCartItem(id: Long) {
-        val item = db.cartDao().findById(id) ?: return
-        db.cartDao().deleteById(id)
+    suspend fun updateCartItem(id: String, newName: String, newQty: Double, newUnit: String) {
+        val updates = mapOf(
+            "name" to newName,
+            "searchableName" to newName.lowercase(),
+            "quantity" to newQty,
+            "unit" to newUnit
+        )
+        userCart.document(id).update(updates).await()
     }
 
-
-
+    suspend fun deleteCartItem(id: String) {
+        userCart.document(id).delete().await()
+    }
 }

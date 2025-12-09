@@ -35,12 +35,19 @@ class AuthViewModel : ViewModel() {
     private val _googleSignInState = MutableStateFlow(GoogleSignInState())
     val googleSignInState = _googleSignInState.asStateFlow()
 
+    private val _user = MutableStateFlow<User?>(null)
+    val user = _user.asStateFlow()
+
     init {
         auth.addAuthStateListener { firebaseAuth ->
-            if (firebaseAuth.currentUser != null) {
-                _authState.value = AuthState.Authenticated
-            } else {
-                _authState.value = AuthState.Unauthenticated
+            viewModelScope.launch {
+                if (firebaseAuth.currentUser != null) {
+                    _user.value = userRepository.getUser(firebaseAuth.currentUser!!.uid)
+                    _authState.value = AuthState.Authenticated
+                } else {
+                    _user.value = null
+                    _authState.value = AuthState.Unauthenticated
+                }
             }
         }
     }
@@ -91,6 +98,7 @@ class AuthViewModel : ViewModel() {
 
     fun logout() {
         auth.signOut()
+        _user.value = null
     }
 
     fun resetState() {

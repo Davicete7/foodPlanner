@@ -5,12 +5,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foodplanner.viewmodel.PantryViewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.foodplanner.data.repo.PantryRepository.CartRow
+import com.example.foodplanner.data.db.entities.CartItem
 import com.example.foodplanner.ui.pantry.UnitSelector
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,16 +19,12 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.text.input.KeyboardType
 
-
-
 val availableUnits = listOf("kg", "g", "L", "mL", "pcs")
-
 
 @Composable
 fun CartScreen(vm: PantryViewModel = viewModel()) {
-    var ingredientToEdit by remember { mutableStateOf<CartRow?>(null) }
-    val cart by vm.cart.observeAsState(emptyList())
-
+    var ingredientToEdit by remember { mutableStateOf<CartItem?>(null) }
+    val cart by vm.cart.collectAsState()
 
     Column {
         TextButton(onClick = { vm.clearCart() }) { Text("Clear") }
@@ -37,7 +33,7 @@ fun CartScreen(vm: PantryViewModel = viewModel()) {
                 CartRowItem(
                     item = row,
                     onEdit = { ingredientToEdit = it },
-                    onDelete = { vm.deleteCartItem(it.id) }
+                    onDelete = { vm.deleteCartItem(it.id!!) }
                 )
                 HorizontalDivider()
             }
@@ -50,7 +46,7 @@ fun CartScreen(vm: PantryViewModel = viewModel()) {
                 onDismiss = { ingredientToEdit = null },
                 onSave = { updatedItem ->
                     vm.updateCartItem(
-                        updatedItem.id,
+                        updatedItem.id!!,
                         updatedItem.name,
                         updatedItem.quantity,
                         updatedItem.unit
@@ -65,9 +61,9 @@ fun CartScreen(vm: PantryViewModel = viewModel()) {
 
 @Composable
 fun CartRowItem(
-    item: CartRow,
-    onEdit: (CartRow) -> Unit,
-    onDelete: (CartRow) -> Unit
+    item: CartItem,
+    onEdit: (CartItem) -> Unit,
+    onDelete: (CartItem) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -93,10 +89,10 @@ fun CartRowItem(
 
 @Composable
 fun EditCartDialog(
-    ingredient: CartRow,
+    ingredient: CartItem,
     availableUnits: List<String>,
     onDismiss: () -> Unit,
-    onSave: (CartRow) -> Unit
+    onSave: (CartItem) -> Unit
 ) {
     var name by remember { mutableStateOf(ingredient.name) }
     var qty by remember { mutableStateOf(ingredient.quantity.toString()) }
