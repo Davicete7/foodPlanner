@@ -68,6 +68,8 @@ class PantryRepository(private val userId: String) {
         }
     }
 
+
+    /*
     suspend fun addMissingToCart(need: List<Triple<String, Double, String>>) {
         val currentInventory = inventory.first().associateBy { it.searchableName }
         val currentCart = cart.first().associateBy { it.searchableName }
@@ -101,6 +103,124 @@ class PantryRepository(private val userId: String) {
             }
         }
         batch.commit().await()
+    }*/
+
+    suspend fun addMissingToCart(need: List<Triple<String, Double, String>>) {
+        val currentInventory = inventory.first().associateBy { it.searchableName }
+        val currentCart = cart.first().associateBy { it.searchableName }
+        val batch = db.batch()
+
+        for ((name, qtyNeeded, unitNeeded) in need) {
+            val searchableName = name.lowercase()
+            val inventoryItem = currentInventory[searchableName]
+
+            // Calculate the quantity that we have to add to the cart
+            // checking the ingridients that we already have in the inventory
+            val quantityToAdd = if (inventoryItem != null) {
+                // If we have the item, we chek if we can subtract them
+                calculateMissingAmount(
+                    neededQty = qtyNeeded,
+                    neededUnit = unitNeeded,
+                    haveQty = inventoryItem.quantity,
+                    haveUnit = inventoryItem.unit
+                )
+            } else {
+                // If not, add all the quantity
+                qtyNeeded
+            }
+
+            // If the quantity needed is positive, add it to the cart
+            if (quantityToAdd > 0) {
+                val existingCartItem = currentCart[searchableName]
+
+                if (existingCartItem == null) {
+                    val newCartItemRef = userCart.document()
+                    batch.set(
+                        newCartItemRef,
+                        CartItem(
+                            name = name,
+                            searchableName = searchableName,
+                            quantity = quantityToAdd,
+                            unit = unitNeeded
+                        )
+                    )
+                } else {
+                    existingCartItem.id?.let {
+                        val docRef = userCart.document(it)
+                        // Add the quantity to the existing item
+                        val newQty = existingCartItem.quantity + quantityToAdd
+                        batch.update(docRef, "quantity", newQty)
+                    }
+                }
+            }
+        }
+        batch.commit().await()
+    }
+
+
+    private fun calculateMissingAmount(
+        neededQty: Double,
+        neededUnit: String,
+        haveQty: Double,
+        haveUnit: String
+    ): Double {
+        val neededType = getUnitType(neededUnit)
+        val haveType = getUnitType(haveUnit)
+
+        // If the unit types doesn't match (ex: Kg vs Liters, o Kg vs Pcs),
+        // we cannot subtract them. Add the quantity of the recipe.
+        if (neededType != haveType) {
+            return neededQty
+        }
+
+        // If the unit types match, we can subtract them, but we have to convert them to base
+        return when (neededType) {
+            UnitType.MASS, UnitType.VOLUME -> {
+                // Convert g or ml to base
+                val neededInBase = toBase(neededQty, neededUnit)
+                val haveInBase = toBase(haveQty, haveUnit)
+                val missingInBase = (neededInBase - haveInBase).coerceAtLeast(0.0)
+                fromBase(missingInBase, neededUnit)
+            }
+            UnitType.OTHER -> {
+                // Fot other units we subtract the quantities directly (this is the case of pcs)
+                (neededQty - haveQty).coerceAtLeast(0.0)
+            }
+        }
+    }
+
+    enum class UnitType { MASS, VOLUME, OTHER }
+
+    private fun getUnitType(unit: String): UnitType {
+        return when (unit.lowercase().trim()) {
+            "kg", "g", "gr", "gram", "grams", "kilogram", "kilograms" -> UnitType.MASS
+            "l", "ml", "liter", "liters", "milliliter", "milliliters" -> UnitType.VOLUME
+            else -> UnitType.OTHER
+        }
+    }
+
+    // Convert to base (g/ml)
+    private fun toBase(qty: Double, unit: String): Double {
+        val u = unit.lowercase().trim()
+        return when {
+            // Mass, base in g
+            u.startsWith("k") -> qty * 1000.0 // kg -> g
+            u == "g" || u == "gr" || u.startsWith("gram") -> qty // ya está en g
+
+            // Volume, base in ml
+            u == "l" || u.startsWith("liter") || u.startsWith("litro") -> qty * 1000.0 // L -> ml
+            else -> qty // ml o desconocido se queda igual
+        }
+    }
+
+    // Convert from base (g/ml) to target unit
+    private fun fromBase(baseQty: Double, targetUnit: String): Double {
+        val u = targetUnit.lowercase().trim()
+        return when {
+            u.startsWith("k") -> baseQty / 1000.0 // g -> kg
+            u == "l" || u.startsWith("liter") || u.startsWith("litro") -> baseQty / 1000.0 // ml -> L
+            else -> baseQty
+        }
     }
 
     suspend fun clearCart() {
