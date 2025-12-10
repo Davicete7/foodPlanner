@@ -17,7 +17,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
+
+enum class SortOrder {
+    NAME,
+    EXPIRATION
+}
 
 class PantryViewModel(app: Application, private val userId: String) : AndroidViewModel(app) {
     private val repo = PantryRepository(userId)
@@ -30,6 +38,44 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
     val cart: StateFlow<List<CartItem>> = _cart.asStateFlow()
 
     val recipes = MutableStateFlow<List<RecipeDTO>>(emptyList())
+
+    // Variables for searching and sorting in the inventory
+    private val _searchText = MutableStateFlow("")
+    val searchText = _searchText.asStateFlow()
+
+    private val _sortOrder = MutableStateFlow(SortOrder.EXPIRATION)
+    val sortOrder = _sortOrder.asStateFlow()
+
+    // Combines the original list of ingridients with
+    // the search term and sort order
+    val visibleInventory: StateFlow<List<InventoryItem>> = combine(
+        _inventory,
+        _searchText,
+        _sortOrder
+    ) { list, text, order ->
+        // Filter
+        val filteredList = if (text.isBlank()) {
+            list
+        } else {
+            list.filter { item ->
+                item.name.contains(text, ignoreCase = true)
+            }
+        }
+
+        // Sort
+        when (order) {
+            SortOrder.NAME -> filteredList.sortedBy { it.name }
+            SortOrder.EXPIRATION -> filteredList.sortedBy {
+                // If there is not an expiration date, we put it at the end
+                it.expirationDate ?: Long.MAX_VALUE
+            }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
 
     init {
         // Cargar inventario con manejo de errores
@@ -115,6 +161,16 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
                 Log.e("PantryViewModel", "Error borrando del carrito: ${e.message}")
             }
         }
+
+    // Change the search term
+    fun onSearchTextChange(text: String) {
+        _searchText.value = text
+    }
+
+    // Change the the term of sorting
+    fun onSortOrderChange(order: SortOrder) {
+        _sortOrder.value = order
+    }
 
     class Factory(private val app: Application, private val userId: String) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {

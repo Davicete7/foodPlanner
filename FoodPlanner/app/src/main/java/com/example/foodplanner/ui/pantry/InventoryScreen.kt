@@ -19,9 +19,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.rotate
@@ -35,7 +38,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import com.example.foodplanner.viewmodel.SortOrder
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
     val userState by authViewModel.user.collectAsState()
@@ -48,7 +53,9 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
             val factory = PantryViewModel.Factory(context.applicationContext as Application, user.uid)
             val vm: PantryViewModel = viewModel(factory = factory)
 
-            val inv by vm.inventory.collectAsState()
+            val inv by vm.visibleInventory.collectAsState()
+            val searchText by vm.searchText.collectAsState()
+            val currentSort by vm.sortOrder.collectAsState()
             var name by remember { mutableStateOf("") }
             var qty by remember { mutableStateOf("") }
             var unit by remember { mutableStateOf("pcs") }
@@ -98,6 +105,53 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
                 }) { Text("Save") }
 
                 HorizontalDivider()
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 1. Search abr
+                OutlinedTextField(
+                    value = searchText,
+                    onValueChange = { vm.onSearchTextChange(it) },
+                    label = { Text("Buscar ingrediente...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 2. Chips for sorting
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Chip for expiration
+                    FilterChip(
+                        selected = currentSort == SortOrder.EXPIRATION,
+                        onClick = { vm.onSortOrderChange(SortOrder.EXPIRATION) },
+                        label = { Text("Expiration") },
+                        leadingIcon = {
+                            if (currentSort == SortOrder.EXPIRATION) {
+                                Icon(Icons.Default.Check, contentDescription = null)
+                            }
+                        }
+                    )
+
+                    // Chip for name
+                    FilterChip(
+                        selected = currentSort == SortOrder.NAME,
+                        onClick = { vm.onSortOrderChange(SortOrder.NAME) },
+                        label = { Text("Name") },
+                        leadingIcon = {
+                            if (currentSort == SortOrder.NAME) {
+                                Icon(Icons.Default.Check, contentDescription = null)
+                            }
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
 
                 LazyColumn {
                     items(inv) { row ->
