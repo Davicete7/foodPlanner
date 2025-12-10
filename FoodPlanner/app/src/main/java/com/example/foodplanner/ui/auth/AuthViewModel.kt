@@ -1,12 +1,12 @@
 package com.example.foodplanner.ui.auth
 
+import android.app.Application
 import android.util.Log
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodplanner.data.User
 import com.example.foodplanner.data.UserRepository
 import com.example.foodplanner.utils.await
-import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,21 +19,18 @@ sealed class AuthState {
     data class Error(val message: String) : AuthState()
 }
 
-data class GoogleSignInState(
-    val isSignInSuccessful: Boolean = false,
-    val signInError: String? = null
-)
-
-class AuthViewModel : ViewModel() {
+class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val userRepository = UserRepository()
+    val googleAuthUiClient by lazy {
+        GoogleAuthUiClient(
+            context = application.applicationContext
+        )
+    }
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
     val authState = _authState.asStateFlow()
-
-    private val _googleSignInState = MutableStateFlow(GoogleSignInState())
-    val googleSignInState = _googleSignInState.asStateFlow()
 
     private val _user = MutableStateFlow<User?>(null)
     val user = _user.asStateFlow()
@@ -43,7 +40,6 @@ class AuthViewModel : ViewModel() {
             viewModelScope.launch {
                 try {
                     if (firebaseAuth.currentUser != null) {
-                        // Intenta obtener datos del usuario de Firestore
                         val firestoreUser = userRepository.getUser(firebaseAuth.currentUser!!.uid)
                         _user.value = firestoreUser
                         _authState.value = AuthState.Authenticated
@@ -52,10 +48,7 @@ class AuthViewModel : ViewModel() {
                         _authState.value = AuthState.Unauthenticated
                     }
                 } catch (e: Exception) {
-                    Log.e("AuthViewModel", "Error al obtener usuario: ${e.message}")
-                    // Aunque falle Firestore, si hay usuario en Auth, lo consideramos autenticado parcialmente
-                    // o podrías enviarlo a Error si prefieres bloquear el acceso.
-                    // Aquí mantenemos el estado basado en si firebaseAuth tiene usuario:
+                    Log.e("AuthViewModel", "Error getting user: ${e.message}")
                     if (firebaseAuth.currentUser != null) {
                         _authState.value = AuthState.Authenticated
                     } else {
@@ -66,19 +59,21 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun signInWithGoogle(credential: AuthCredential) {
+    fun onGoogleSignInResult(result: GoogleSignInResult) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
-            try {
-                val authResult = auth.signInWithCredential(credential).await()
-                authResult?.user?.let { firebaseUser ->
-                    val user = User(uid = firebaseUser.uid, email = firebaseUser.email ?: "")
-                    userRepository.createUser(user) // Esto crea o actualiza el usuario
+            if (result.isSuccess && result.credential != null) {
+                try {
+                    val authResult = auth.signInWithCredential(result.credential).await()
+                    authResult?.user?.let { firebaseUser ->
+                        val user = User(uid = firebaseUser.uid, email = firebaseUser.email ?: "")
+                        userRepository.createUser(user) // This creates or updates the user
+                    }
+                } catch (e: Exception) {
+                    _authState.value = AuthState.Error(e.message ?: "Unknown error")
                 }
-                _googleSignInState.value = GoogleSignInState(isSignInSuccessful = true)
-            } catch (e: Exception) {
-                _googleSignInState.value = GoogleSignInState(signInError = e.message)
-                _authState.value = AuthState.Unauthenticated
+            } else {
+                _authState.value = AuthState.Error(result.errorMessage ?: "Unknown error")
             }
         }
     }
@@ -112,12 +107,14 @@ class AuthViewModel : ViewModel() {
     }
 
     fun logout() {
-        auth.signOut()
-        _user.value = null
+        viewModelScope.launch {
+            googleAuthUiClient.signOut()
+            auth.signOut()
+            _user.value = null
+        }
     }
 
     fun resetState() {
-        _googleSignInState.value = GoogleSignInState()
         if (auth.currentUser == null) {
             _authState.value = AuthState.Unauthenticated
         }

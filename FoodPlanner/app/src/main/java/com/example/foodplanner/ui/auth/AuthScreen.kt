@@ -1,5 +1,9 @@
 package com.example.foodplanner.ui.auth
 
+import android.app.Activity.RESULT_OK
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -10,6 +14,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun AuthScreen(
@@ -19,6 +24,20 @@ fun AuthScreen(
     var password by remember { mutableStateOf("") }
     var isLogin by remember { mutableStateOf(true) }
     val authState by authViewModel.authState.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            coroutineScope.launch {
+                val signInResult = authViewModel.googleAuthUiClient.getSignInResultFromIntent(
+                    intent = result.data ?: return@launch
+                )
+                authViewModel.onGoogleSignInResult(signInResult)
+            }
+        }
+    }
 
     // Reset state when switching between login/register
     LaunchedEffect(isLogin) {
@@ -80,6 +99,25 @@ fun AuthScreen(
             enabled = authState !is AuthState.Loading
         ) {
             Text(if (isLogin) "Login" else "Register")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    val signInIntentSender = authViewModel.googleAuthUiClient.signIn()
+                    launcher.launch(
+                        IntentSenderRequest.Builder(
+                            signInIntentSender ?: return@launch
+                        ).build()
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = authState !is AuthState.Loading
+        ) {
+            Text("Sign in with Google")
         }
 
         Spacer(modifier = Modifier.height(8.dp))

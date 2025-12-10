@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -79,5 +80,3 @@ dependencies {
     // Google Sign-In
     implementation("com.google.android.gms:play-services-auth:21.1.0")
 }
-
-apply(plugin = "com.google.gms.google-services")
