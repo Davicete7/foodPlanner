@@ -1,6 +1,7 @@
 package com.example.foodplanner.ui.auth
 
 import android.app.Activity.RESULT_OK
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -25,6 +27,7 @@ fun AuthScreen(
     var isLogin by remember { mutableStateOf(true) }
     val authState by authViewModel.authState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
@@ -76,14 +79,14 @@ fun AuthScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Box(modifier = Modifier.height(60.dp), contentAlignment = Alignment.Center) {
-             when (val state = authState) {
+            when (val state = authState) {
                 is AuthState.Loading -> {
                     CircularProgressIndicator()
                 }
                 is AuthState.Error -> {
                     Text(text = state.message, color = MaterialTheme.colorScheme.error)
                 }
-                 else -> {}
+                else -> {}
             }
         }
 
@@ -101,17 +104,27 @@ fun AuthScreen(
             Text(if (isLogin) "Login" else "Register")
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            HorizontalDivider(modifier = Modifier.weight(1f))
+            Text(" OR ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+            HorizontalDivider(modifier = Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
             onClick = {
                 coroutineScope.launch {
                     val signInIntentSender = authViewModel.googleAuthUiClient.signIn()
-                    launcher.launch(
-                        IntentSenderRequest.Builder(
-                            signInIntentSender ?: return@launch
-                        ).build()
-                    )
+                    if (signInIntentSender != null) {
+                        launcher.launch(
+                            IntentSenderRequest.Builder(signInIntentSender).build()
+                        )
+                    } else {
+                        Toast.makeText(context, "Google Sign In failed to start", Toast.LENGTH_SHORT).show()
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth(),

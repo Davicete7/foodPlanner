@@ -39,21 +39,25 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         auth.addAuthStateListener { firebaseAuth ->
             viewModelScope.launch {
                 try {
-                    if (firebaseAuth.currentUser != null) {
-                        val firestoreUser = userRepository.getUser(firebaseAuth.currentUser!!.uid)
+                    val currentUser = firebaseAuth.currentUser
+                    if (currentUser != null) {
+                        // Intentamos obtener el usuario de Firestore
+                        val firestoreUser = userRepository.getUser(currentUser.uid)
                         _user.value = firestoreUser
-                        _authState.value = AuthState.Authenticated
+
+                        // Si el usuario existe en Auth pero no en Firestore (ej. recién creado por Google Sign In),
+                        // esperamos a que onGoogleSignInResult lo cree y actualice el estado,
+                        // pero marcamos como Authenticated para que la navegación no se bloquee si ya tenemos datos.
+                        if (firestoreUser != null) {
+                            _authState.value = AuthState.Authenticated
+                        }
                     } else {
                         _user.value = null
                         _authState.value = AuthState.Unauthenticated
                     }
                 } catch (e: Exception) {
                     Log.e("AuthViewModel", "Error getting user: ${e.message}")
-                    if (firebaseAuth.currentUser != null) {
-                        _authState.value = AuthState.Authenticated
-                    } else {
-                        _authState.value = AuthState.Unauthenticated
-                    }
+                    _authState.value = AuthState.Unauthenticated
                 }
             }
         }
@@ -66,8 +70,19 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 try {
                     val authResult = auth.signInWithCredential(result.credential).await()
                     authResult?.user?.let { firebaseUser ->
-                        val user = User(uid = firebaseUser.uid, email = firebaseUser.email ?: "")
-                        userRepository.createUser(user) // This creates or updates the user
+                        // IMPORTANTE: Verificar si el usuario ya existe para no sobrescribir datos
+                        val existingUser = userRepository.getUser(firebaseUser.uid)
+
+                        if (existingUser == null) {
+                            // Usuario nuevo: lo creamos en Firestore
+                            val newUser = User(uid = firebaseUser.uid, email = firebaseUser.email ?: "")
+                            userRepository.createUser(newUser)
+                            _user.value = newUser
+                        } else {
+                            // Usuario existente: actualizamos el estado local
+                            _user.value = existingUser
+                        }
+                        _authState.value = AuthState.Authenticated
                     }
                 } catch (e: Exception) {
                     _authState.value = AuthState.Error(e.message ?: "Unknown error")
@@ -83,6 +98,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _authState.value = AuthState.Loading
             try {
                 auth.signInWithEmailAndPassword(email, password).await()
+                // El AuthStateListener se encargará de actualizar el estado a Authenticated
             } catch (e: Exception) {
                 _authState.value = AuthState.Error(e.message ?: "Unknown error")
             }
@@ -97,6 +113,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 authResult?.user?.let { firebaseUser ->
                     val user = User(uid = firebaseUser.uid, email = email)
                     userRepository.createUser(user)
+                    _user.value = user
+                    _authState.value = AuthState.Authenticated
                 } ?: run {
                     _authState.value = AuthState.Error("User creation failed")
                 }
@@ -108,9 +126,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun logout() {
         viewModelScope.launch {
-            googleAuthUiClient.signOut()
-            auth.signOut()
-            _user.value = null
+            try {
+                googleAuthUiClient.signOut()
+                auth.signOut()
+                _user.value = null
+                _authState.value = AuthState.Unauthenticated
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Error logging out", e)
+            }
         }
     }
 
