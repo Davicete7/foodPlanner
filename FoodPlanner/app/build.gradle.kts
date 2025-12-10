@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.analytics)
     implementation(libs.play.services.tasks)
+    implementation(libs.firebase.functions)
 
     // Google Sign-In
     implementation("com.google.android.gms:play-services-auth:21.1.0")

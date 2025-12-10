@@ -5,4 +5,5 @@ object Routes {
     const val Recipes = "recipes"
     const val Cart = "cart"
     const val Auth = "auth"
+    const val Chat = "chat" // Nuevo
 }

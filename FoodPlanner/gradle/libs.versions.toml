@@ -36,6 +36,7 @@ firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 play-services-tasks = { group = "com.google.android.gms", name = "play-services-tasks", version.ref = "play-services-tasks"}
+firebase-functions = { group = "com.google.firebase", name = "firebase-functions-ktx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
