@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -18,6 +20,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -29,6 +32,7 @@ import com.example.foodplanner.ui.auth.AuthScreen
 import com.example.foodplanner.ui.auth.AuthState
 import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.cart.CartScreen
+import com.example.foodplanner.ui.chat.ChatScreen
 import com.example.foodplanner.ui.components.GreetingBar
 import com.example.foodplanner.ui.pantry.InventoryScreen
 import com.example.foodplanner.ui.recipes.RecipeListScreen
@@ -85,6 +89,7 @@ fun MainScreen(authViewModel: AuthViewModel) {
                 composable(Routes.Inventory) { InventoryScreen() }
                 composable(Routes.Recipes) { RecipeListScreen() }
                 composable(Routes.Cart) { CartScreen() }
+                composable(Routes.Chat) { ChatScreen() } // Nueva ruta
             }
         }
     }
@@ -97,11 +102,12 @@ fun BottomNavigationBar(navController: NavHostController) {
 
     NavigationBar {
         val items = listOf(
-            Routes.Inventory to "Inventory",
-            Routes.Recipes to "Recipes",
-            Routes.Cart to "Cart"
+            Triple(Routes.Inventory, "Inventory", Icons.AutoMirrored.Filled.List),
+            Triple(Routes.Recipes, "Recipes", Icons.AutoMirrored.Filled.List),
+            Triple(Routes.Cart, "Cart", Icons.AutoMirrored.Filled.List),
+            Triple(Routes.Chat, "AI Chef", Icons.Default.Face) // Nueva pestaña
         )
-        items.forEach { (route, label) ->
+        items.forEach { (route, label, icon) ->
             NavigationBarItem(
                 selected = currentRoute == route,
                 onClick = {
@@ -113,7 +119,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                         restoreState = true
                     }
                 },
-                icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
+                icon = { Icon(icon, contentDescription = null) },
                 label = { Text(label) }
             )
         }
