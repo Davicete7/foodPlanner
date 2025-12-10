@@ -1,8 +1,8 @@
-import { genkit, z } from "genkit";
-import { firebase } from "@genkit-ai/firebase";
-import { googleAI, gemini15Flash } from "@genkit-ai/googleai";
+import {genkit, z} from "genkit";
+import {firebase} from "@genkit-ai/firebase";
+import {googleAI, gemini15Flash} from "@genkit-ai/googleai";
 import * as admin from "firebase-admin";
-import { onCall } from "firebase-functions/v2/https";
+import {onCall} from "firebase-functions/v2/https";
 import * as functions from "firebase-functions";
 
 // Inicializar Firebase Admin
@@ -16,9 +16,10 @@ const ai = genkit({
 });
 
 // 2. Definir el esquema de entrada (opcional, pero buena práctica)
-const RecipeInputSchema = z.object({
-  question: z.string(),
-});
+// Comentado para evitar error de variable no usada
+// const RecipeInputSchema = z.object({
+//   question: z.string(),
+// });
 
 export const suggestRecipe = onCall(async (request) => {
   // Verificación de autenticación
@@ -41,15 +42,15 @@ export const suggestRecipe = onCall(async (request) => {
     .get();
 
   if (inventorySnapshot.empty) {
-    return { text: "Tu inventario está vacío. ¡Añade ingredientes primero!" };
+    return {text: "Tu inventario está vacío. ¡Añade ingredientes primero!"};
   }
 
   // Formatear inventario
   const inventoryList = inventorySnapshot.docs.map((doc) => {
     const data = doc.data();
-    const expiry = data.expirationDate
-      ? new Date(data.expirationDate).toLocaleDateString()
-      : "sin fecha";
+    const expiry = data.expirationDate ?
+      new Date(data.expirationDate).toLocaleDateString() :
+      "sin fecha";
     return `- ${data.name} (${data.quantity} ${data.unit}), caduca: ${expiry}`;
   }).join("\n");
 
@@ -77,5 +78,5 @@ export const suggestRecipe = onCall(async (request) => {
   });
 
   // 4. Usar la propiedad .text (sin paréntesis en la nueva versión)
-  return { text: llmResponse.text };
+  return {text: llmResponse.text};
 });
