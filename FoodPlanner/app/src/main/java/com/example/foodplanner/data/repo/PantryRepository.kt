@@ -24,9 +24,8 @@ class PantryRepository(private val userId: String) {
     }
 
     /**
-     * Añadir o actualizar un item de inventario por nombre (searchableName).
-     * Se ha eliminado el uso incorrecto de transaction.get(query),
-     * que no está soportado. Ahora se hace un get normal y luego se actualiza.
+     * Adds or updates an ingredient in the inventory.
+     * Checks for unit compatibility (Mass with mass, volume with volume, etc.).
      */
     suspend fun addOrUpdateInventory(
         name: String,
@@ -34,37 +33,69 @@ class PantryRepository(private val userId: String) {
         unit: String,
         expirationDate: Long?
     ) {
-        val searchableName = name.lowercase()
+        val searchableName = name.lowercase().trim()
+        val incomingType = getUnitType(unit)
 
-        // Primero buscamos si ya existe un documento con ese searchableName
+        // Get all ingredients with the same name
         val snapshot = userInventory
             .whereEqualTo("searchableName", searchableName)
-            .limit(1)
             .get()
             .await()
 
-        if (snapshot == null || snapshot.isEmpty) {
-            // Crear nuevo documento
-            val newItemRef = userInventory.document()
-            val newItem = InventoryItem(
-                name = name,
+        var compatibleIngredient: com.google.firebase.firestore.DocumentSnapshot? = null
+
+        // Find a compatible ingridient (mass with mass, volume with volume, etc.)
+        if (snapshot != null && !snapshot.isEmpty) {
+            for (ingredient in snapshot.documents) {
+                val ingredientUnit = ingredient.getString("unit") ?: ""
+                val ingredientType = getUnitType(ingredientUnit)
+
+                val isCompatible = when {
+                    incomingType == UnitType.MASS && ingredientType == UnitType.MASS -> true
+                    incomingType == UnitType.VOLUME && ingredientType == UnitType.VOLUME -> true
+                    incomingType == UnitType.OTHER && ingredientType == UnitType.OTHER -> true
+                    else -> false
+                }
+
+                if (isCompatible) {
+                    compatibleIngredient = ingredient
+                    break
+                }
+            }
+        }
+
+        if (compatibleIngredient != null) {
+            // Update ingridient
+            val currentQty = compatibleIngredient.getDouble("quantity") ?: 0.0
+            val currentUnit = compatibleIngredient.getString("unit") ?: ""
+
+            // Calculate total in base unit, then convert back to the ingredient's current unit
+            val currentInBase = toBase(currentQty, currentUnit)
+            val incomingInBase = toBase(quantity, unit)
+            val totalInBase = currentInBase + incomingInBase
+            val newTotalQty = fromBase(totalInBase, currentUnit)
+
+            val updates = mutableMapOf<String, Any>(
+                "quantity" to newTotalQty
+            )
+            // Only update expiration date if a new one is provided
+            if (expirationDate != null) {
+                updates["expirationDate"] = expirationDate
+            }
+
+            compatibleIngredient.reference.update(updates).await()
+
+        } else {
+            // Create new ingridient
+            val newIngredientRef = userInventory.document()
+            val newIngredient = InventoryItem(
+                name = name.trim(),
                 searchableName = searchableName,
                 quantity = quantity,
                 unit = unit,
                 expirationDate = expirationDate
             )
-            newItemRef.set(newItem).await()
-        } else {
-            // Actualizar documento existente (aquí puedes decidir qué campos actualizar)
-            val docRef = snapshot.documents.first().reference
-            val updates = mutableMapOf<String, Any>(
-                "name" to name,
-                "searchableName" to searchableName,
-                "quantity" to quantity,
-                "unit" to unit
-            )
-            expirationDate?.let { updates["expirationDate"] = it }
-            docRef.update(updates).await()
+            newIngredientRef.set(newIngredient).await()
         }
     }
 

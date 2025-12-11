@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,6 +21,7 @@ import com.example.foodplanner.data.db.entities.CartItem
 import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.components.UnitSelector
 import com.example.foodplanner.ui.components.availableUnits
+import com.example.foodplanner.ui.pantry.DateSelector
 import com.example.foodplanner.viewmodel.PantryViewModel
 
 @Composable
@@ -39,6 +41,9 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
             val vm: PantryViewModel = viewModel(factory = factory)
 
             var ingredientToEdit by remember { mutableStateOf<CartItem?>(null) }
+
+            var itemToBuy by remember { mutableStateOf<CartItem?>(null) }
+
             val cart by vm.cart.collectAsState()
 
             var name by remember { mutableStateOf("") }
@@ -118,10 +123,22 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
                         CartRowItem(
                             item = row,
                             onEdit = { ingredientToEdit = it },
-                            onDelete = { vm.deleteCartItem(it.id!!) }
+                            onDelete = { vm.deleteCartItem(it.id!!) },
+                            onBuy = { itemToBuy = it }
                         )
                         HorizontalDivider()
                     }
+                }
+
+                itemToBuy?.let { item ->
+                    BuyItemDialog(
+                        item = item,
+                        onDismiss = { itemToBuy = null },
+                        onConfirm = { date ->
+                            vm.purchaseItem(item, date)
+                            itemToBuy = null
+                        }
+                    )
                 }
 
                 ingredientToEdit?.let { ingredient ->
@@ -151,7 +168,8 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
 fun CartRowItem(
     item: CartItem,
     onEdit: (CartItem) -> Unit,
-    onDelete: (CartItem) -> Unit
+    onDelete: (CartItem) -> Unit,
+    onBuy: (CartItem) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -164,6 +182,13 @@ fun CartRowItem(
             Text("${item.quantity} ${item.unit}", style = MaterialTheme.typography.bodyMedium)
         }
         Row {
+            IconButton(onClick = { onBuy(item) }) {
+                Icon(
+                    imageVector = Icons.Default.ShoppingCart,
+                    contentDescription = "Buy",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
             IconButton(onClick = { onEdit(item) }) {
                 Icon(Icons.Default.Edit, contentDescription = "Edit")
             }
@@ -223,6 +248,43 @@ fun EditCartDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+fun BuyItemDialog(
+    item: CartItem,
+    onDismiss: () -> Unit,
+    onConfirm: (Long?) -> Unit
+) {
+    var expirationDate by remember { mutableStateOf<Long?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Product Purchased") },
+        text = {
+            Column {
+                Text("Adding '${item.name}' to inventory.")
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Select expiration date (optional):", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                DateSelector(
+                    selectedDate = expirationDate,
+                    onDateSelected = { expirationDate = it }
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(expirationDate) }) {
+                Text("Add to Pantry")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
         }
     )
 }

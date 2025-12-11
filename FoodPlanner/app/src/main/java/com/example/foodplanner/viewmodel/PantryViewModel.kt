@@ -182,6 +182,25 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
         }
     }
 
+    // Move from Cart to Inventory
+    fun purchaseItem(item: CartItem, expirationDate: Long?) = viewModelScope.launch {
+        try {
+            // Add to Inventory
+            repo.addOrUpdateInventory(
+                name = item.name,
+                quantity = item.quantity,
+                unit = item.unit,
+                expirationDate = expirationDate
+            )
+
+            // Remove from Cart
+            item.id?.let { repo.deleteCartItem(it) }
+
+        } catch (e: Exception) {
+            Log.e("PantryViewModel", "Error buying item: ${e.message}")
+        }
+    }
+
     class Factory(private val app: Application, private val userId: String) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(PantryViewModel::class.java)) {
