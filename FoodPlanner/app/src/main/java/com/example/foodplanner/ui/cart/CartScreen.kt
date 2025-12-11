@@ -278,7 +278,7 @@ fun BuyItemDialog(
         },
         confirmButton = {
             Button(onClick = { onConfirm(expirationDate) }) {
-                Text("Add to Pantry")
+                Text("Add to Inventory")
             }
         },
         dismissButton = {
