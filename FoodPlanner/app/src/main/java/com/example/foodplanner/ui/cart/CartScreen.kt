@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foodplanner.data.db.entities.CartItem
 import com.example.foodplanner.ui.auth.AuthViewModel
@@ -28,7 +29,7 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
 
     // Esperar a que el usuario esté cargado para inicializar el PantryViewModel
     if (userState == null) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
     } else {
@@ -40,6 +41,10 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
             var ingredientToEdit by remember { mutableStateOf<CartItem?>(null) }
             val cart by vm.cart.collectAsState()
 
+            var name by remember { mutableStateOf("") }
+            var qty by remember { mutableStateOf("") }
+            var unit by remember { mutableStateOf("pcs") }
+
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -47,6 +52,66 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
                 ) {
                     TextButton(onClick = { vm.clearCart() }) { Text("Clear Cart") }
                 }
+
+
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    Text("Add Item Manually", style = MaterialTheme.typography.titleSmall)
+
+                    // Input name
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Product") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Input quantity and unit
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = qty,
+                            onValueChange = { qty = it },
+                            label = { Text("Qty") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Unit selector
+                        Box(modifier = Modifier.weight(1f)) {
+                            UnitSelector(
+                                selectedUnit = unit,
+                                availableUnits = availableUnits, // Asegúrate de tener esta lista disponible aquí
+                                onUnitSelected = { unit = it }
+                            )
+                        }
+                    }
+
+                    // Add button
+                    Button(
+                        onClick = {
+                            val quantityDouble = qty.toDoubleOrNull() ?: 0.0
+                            if (name.isNotBlank() && quantityDouble > 0.0) {
+
+                                vm.addToCartManual(name, quantityDouble, unit)
+
+                                name = ""
+                                qty = ""
+                                unit = "pcs"
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        enabled = name.isNotBlank() && qty.isNotBlank()
+                    ) {
+                        Text("Add to Cart")
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
 
                 LazyColumn {
                     items(cart) { row ->

@@ -69,41 +69,6 @@ class PantryRepository(private val userId: String) {
     }
 
 
-    /*
-    suspend fun addMissingToCart(need: List<Triple<String, Double, String>>) {
-        val currentInventory = inventory.first().associateBy { it.searchableName }
-        val currentCart = cart.first().associateBy { it.searchableName }
-        val batch = db.batch()
-
-        for ((name, qty, unit) in need) {
-            val searchableName = name.lowercase()
-            val have = currentInventory[searchableName]?.quantity ?: 0.0
-            val missing = (qty - have).coerceAtLeast(0.0)
-
-            if (missing > 0) {
-                val existingCartItem = currentCart[searchableName]
-                if (existingCartItem == null) {
-                    val newCartItemRef = userCart.document()
-                    batch.set(
-                        newCartItemRef,
-                        CartItem(
-                            name = name,
-                            searchableName = searchableName,
-                            quantity = missing,
-                            unit = unit
-                        )
-                    )
-                } else {
-                    existingCartItem.id?.let {
-                        val docRef = userCart.document(it)
-                        val newQty = existingCartItem.quantity + missing
-                        batch.update(docRef, "quantity", newQty)
-                    }
-                }
-            }
-        }
-        batch.commit().await()
-    }*/
 
     suspend fun addMissingToCart(need: List<Triple<String, Double, String>>) {
         val currentInventory = inventory.first().associateBy { it.searchableName }
@@ -274,4 +239,67 @@ class PantryRepository(private val userId: String) {
     suspend fun deleteCartItem(id: String) {
         userCart.document(id).delete().await()
     }
+
+    // Add manually to cart
+    suspend fun addOrUpdateCartItem(name: String, quantity: Double, unit: String) {
+        val searchableName = name.lowercase().trim()
+        val incomingType = getUnitType(unit)
+
+        // Take all the ingridients with the same name
+        val snapshot = userCart
+            .whereEqualTo("searchableName", searchableName)
+            .get()
+            .await()
+
+        // Check if any of them is compatible
+        var compatibleDoc: com.google.firebase.firestore.DocumentSnapshot? = null
+
+        if (snapshot != null && !snapshot.isEmpty) {
+            for (doc in snapshot.documents) {
+                val docUnit = doc.getString("unit") ?: ""
+                val docType = getUnitType(docUnit)
+
+                // Verify if the unit type is compatible
+                val isCompatible = when {
+                    incomingType == UnitType.MASS && docType == UnitType.MASS -> true
+                    incomingType == UnitType.VOLUME && docType == UnitType.VOLUME -> true
+                    incomingType == UnitType.OTHER && docType == UnitType.OTHER -> true // For pcs
+                    else -> false
+                }
+
+                if (isCompatible) {
+                    compatibleDoc = doc
+                    break // Stops with the first compatible one
+                }
+            }
+        }
+
+        // Decide: update or create
+        if (compatibleDoc != null) {
+            // Update: add the quantity
+            val currentQty = compatibleDoc.getDouble("quantity") ?: 0.0
+            val currentUnit = compatibleDoc.getString("unit") ?: ""
+            val currentInBase = toBase(currentQty, currentUnit)
+            val incomingInBase = toBase(quantity, unit)
+
+            val totalInBase = currentInBase + incomingInBase
+
+            // Convert to the unit that was already in the cart
+            val newTotalQty = fromBase(totalInBase, currentUnit)
+
+            compatibleDoc.reference.update("quantity", newTotalQty).await()
+
+        } else {
+            // Crate (if not exists in the list or the unit is incompatible)
+            val newItemRef = userCart.document()
+            val newItem = CartItem(
+                name = name.trim(),
+                searchableName = searchableName,
+                quantity = quantity,
+                unit = unit
+            )
+            newItemRef.set(newItem).await()
+        }
+    }
+
 }

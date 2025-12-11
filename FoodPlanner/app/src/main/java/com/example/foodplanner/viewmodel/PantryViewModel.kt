@@ -172,6 +172,16 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
         _sortOrder.value = order
     }
 
+    fun addToCartManual(name: String, qty: Double, unit: String) = viewModelScope.launch {
+        try {
+            if (name.isNotBlank() && qty > 0) {
+                repo.addOrUpdateCartItem(name, qty, unit)
+            }
+        } catch (e: Exception) {
+            Log.e("PantryViewModel", "Error añadiendo manual al carro: ${e.message}")
+        }
+    }
+
     class Factory(private val app: Application, private val userId: String) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(PantryViewModel::class.java)) {
