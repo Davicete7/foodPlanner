@@ -101,10 +101,11 @@ class PantryRepository(private val userId: String) {
 
 
 
-    suspend fun addMissingToCart(need: List<Triple<String, Double, String>>) {
+    suspend fun addMissingToCart(need: List<Triple<String, Double, String>>): List<String> {
         val currentInventory = inventory.first().associateBy { it.searchableName }
         val currentCart = cart.first().associateBy { it.searchableName }
         val batch = db.batch()
+        val addedItems = mutableListOf<String>()
 
         for ((name, qtyNeeded, unitNeeded) in need) {
             val searchableName = name.lowercase()
@@ -140,17 +141,20 @@ class PantryRepository(private val userId: String) {
                             unit = unitNeeded
                         )
                     )
+                    addedItems.add(name)
                 } else {
                     existingCartItem.id?.let {
                         val docRef = userCart.document(it)
                         // Add the quantity to the existing item
                         val newQty = existingCartItem.quantity + quantityToAdd
                         batch.update(docRef, "quantity", newQty)
+                        addedItems.add(name)
                     }
                 }
             }
         }
         batch.commit().await()
+        return addedItems
     }
 
 
