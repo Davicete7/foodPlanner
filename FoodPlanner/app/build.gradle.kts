@@ -70,7 +70,7 @@ dependencies {
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
     implementation("androidx.compose.runtime:runtime-livedata")
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -95,7 +95,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation("com.firebaseui:firebase-ui-auth:8.0.2")
     implementation("com.firebaseui:firebase-ui-firestore:8.0.2")
-    implementation("com.firebaseui:firebase-ui-compose:8.0.2")
+    //implementation("com.firebaseui:firebase-ui-compose:8.0.2")
     implementation(libs.firebase.analytics)
     implementation(libs.play.services.tasks)
 

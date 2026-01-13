@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -16,6 +17,8 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
@@ -23,10 +26,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foodplanner.data.model.Chat
 import com.example.foodplanner.viewmodel.ChatListViewModel
-import com.firebase.ui.firestore.FirestoreRecyclerOptions
-import com.firebase.ui.firestore.compose.FirestoreLazyPagingItems
-import com.firebase.ui.firestore.compose.items
-import com.firebase.ui.firestore.compose.rememberFirestoreLazyPagingItems
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,11 +46,25 @@ fun ChatListScreen(onChatClick: (String) -> Unit) {
         }
     })
 
+    // Opción A: Convertir la Query de Firestore a un Estado de Compose manualmente.
+    // Esto evita usar la librería 'firebase-ui-compose' que faltaba.
     val chatsQuery = viewModel.getChatsFlow()
-    val options = FirestoreRecyclerOptions.Builder<Chat>()
-        .setQuery(chatsQuery, Chat::class.java)
-        .build()
-    val chats: FirestoreLazyPagingItems<Chat> = rememberFirestoreLazyPagingItems(options = options)
+
+    val chats by produceState<List<Chat>>(initialValue = emptyList(), key1 = chatsQuery) {
+        // Agregamos un listener en tiempo real
+        val listener = chatsQuery.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                // Puedes manejar el error aquí si lo deseas
+                return@addSnapshotListener
+            }
+            if (snapshot != null) {
+                // Convertimos los documentos a objetos Chat
+                value = snapshot.toObjects(Chat::class.java)
+            }
+        }
+        // Limpiamos el listener cuando la pantalla se destruye
+        awaitDispose { listener.remove() }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -63,24 +76,22 @@ fun ChatListScreen(onChatClick: (String) -> Unit) {
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding)) {
+            // Usamos 'items' estándar de Compose
             items(chats) { chat ->
-                chat?.let {
-                    ChatItem(
-                        chat = it,
-                        onDelete = { viewModel.deleteChat(it.id) },
-                        onClick = { onChatClick(it.id) }
-                    )
-                }
+                ChatItem(
+                    chat = chat,
+                    onDelete = { viewModel.deleteChat(chat.id) },
+                    onClick = { onChatClick(chat.id) }
+                )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatItem(chat: Chat, onDelete: () -> Unit, onClick: () -> Unit) {
     ListItem(
-        headlineContent = { Text(chat.title) },
+        headlineContent = { Text(chat.title.ifBlank { "Conversación sin título" }) },
         modifier = Modifier.clickable(onClick = onClick),
         trailingContent = {
             IconButton(onClick = onDelete) {

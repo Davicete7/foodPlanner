@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -25,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -34,9 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.foodplanner.data.model.ChatMessage
 import com.example.foodplanner.viewmodel.ChatViewModel
-import com.firebase.ui.firestore.FirestoreRecyclerOptions
-import com.firebase.ui.firestore.compose.FirestoreLazyPagingItems
-import com.firebase.ui.firestore.compose.rememberFirestoreLazyPagingItems
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -56,11 +55,22 @@ fun ChatScreen(chatId: String) {
         factory = ChatViewModel.provideFactory(application, userId, chatId)
     )
 
+    // Recuperamos la Query del ViewModel
     val messagesQuery = viewModel.getMessagesFlow()
-    val options = FirestoreRecyclerOptions.Builder<ChatMessage>()
-        .setQuery(messagesQuery, ChatMessage::class.java)
-        .build()
-    val messages: FirestoreLazyPagingItems<ChatMessage> = rememberFirestoreLazyPagingItems(options = options)
+
+    // SOLUCIÓN: Usamos produceState para escuchar Firestore en tiempo real sin librerías externas
+    val messages by produceState<List<ChatMessage>>(initialValue = emptyList(), key1 = messagesQuery) {
+        val listener = messagesQuery.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                return@addSnapshotListener
+            }
+            if (snapshot != null) {
+                // Mapeamos los documentos a objetos ChatMessage
+                value = snapshot.toObjects(ChatMessage::class.java)
+            }
+        }
+        awaitDispose { listener.remove() }
+    }
 
     var inputText by remember { mutableStateOf("") }
     val isLoading by viewModel.isLoading.collectAsState()
@@ -68,14 +78,14 @@ fun ChatScreen(chatId: String) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         LazyColumn(
             modifier = Modifier.weight(1f),
+            // reverseLayout = false muestra los mensajes de arriba a abajo.
+            // Si quieres que empiece desde abajo (como WhatsApp), cambia a true.
             reverseLayout = false
         ) {
-            items(count = messages.itemCount) { index ->
-                val msg = messages[index]
-                if (msg != null) {
-                    MessageBubble(msg.text, msg.isUser)
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
+            // Usamos la extensión estándar 'items' de Compose
+            items(messages) { msg ->
+                MessageBubble(msg.text, msg.isUser)
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
 

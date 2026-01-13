@@ -31,7 +31,7 @@ class ChatViewModel(app: Application, private val userId: String, private val ch
     init {
         if (BuildConfig.GEMINI_API_KEY.isNotBlank()) {
             generativeModel = GenerativeModel(
-                modelName = "gemini-1.5-flash",
+                modelName = "gemini-2.5-flash",
                 apiKey = BuildConfig.GEMINI_API_KEY
             )
         }
