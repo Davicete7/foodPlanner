@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId != null) {
             val pantryViewModel: PantryViewModel by viewModels { PantryViewModel.Factory(application, userId) }
-            pantryViewModel.schedulePantryCheck()
+            pantryViewModel.schedulePeriodicPantryCheck()
         }
 
         setContent {

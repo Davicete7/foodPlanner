@@ -105,9 +105,17 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
         }
     }
 
-    fun schedulePantryCheck() {
+    fun schedulePeriodicPantryCheck() {
         val inputData = Data.Builder().putString("userId", userId).build()
-        val workRequest = PeriodicWorkRequestBuilder<PantryWorker>(60, TimeUnit.SECONDS)
+        val workRequest = PeriodicWorkRequestBuilder<PantryWorker>(15, TimeUnit.MINUTES)
+            .setInputData(inputData)
+            .build()
+        workManager.enqueue(workRequest)
+    }
+
+    private fun triggerPantryCheck() {
+        val inputData = Data.Builder().putString("userId", userId).build()
+        val workRequest = OneTimeWorkRequestBuilder<PantryWorker>()
             .setInputData(inputData)
             .build()
         workManager.enqueue(workRequest)
@@ -117,6 +125,7 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
         viewModelScope.launch {
             try {
                 repo.addOrUpdateInventory(name, qty, unit, expirationDate)
+                triggerPantryCheck()
             } catch (e: Exception) {
                 Log.e("PantryViewModel", "Error saving item: ${e.message}")
             }
@@ -146,6 +155,7 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
         viewModelScope.launch {
             try {
                 repo.updateInventoryItem(id, newName, newQty, newUnit, newExpirationDate)
+                triggerPantryCheck()
             } catch (e: Exception) {
                 Log.e("PantryViewModel", "Error updating item: ${e.message}")
             }
@@ -155,6 +165,7 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
         viewModelScope.launch {
             try {
                 repo.deleteInventoryItem(id)
+                triggerPantryCheck()
             } catch (e: Exception) {
                 Log.e("PantryViewModel", "Error deleting item: ${e.message}")
             }
@@ -204,6 +215,7 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
                 unit = item.unit,
                 expirationDate = expirationDate
             )
+            triggerPantryCheck()
 
             item.id?.let { repo.deleteCartItem(it) }
 
