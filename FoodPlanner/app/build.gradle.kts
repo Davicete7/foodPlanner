@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -19,6 +21,16 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { input ->
+                localProperties.load(input)
+            }
+        }
+        val apiKey = localProperties.getProperty("GEMINI_API_KEY", "")
+        buildConfigField("String", "GEMINI_API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
@@ -39,6 +51,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         //kotlinCompilerExtensionVersion = "1.6.0"
@@ -73,13 +86,18 @@ dependencies {
     // Kotlin serialization
     implementation(libs.kotlinx.serialization.json)
 
+    // Gemini AI
+    implementation("com.google.ai.client.generativeai:generativeai:0.6.0")
+
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation("com.firebaseui:firebase-ui-auth:8.0.2")
+    implementation("com.firebaseui:firebase-ui-firestore:8.0.2")
+    implementation("com.firebaseui:firebase-ui-compose:8.0.2")
     implementation(libs.firebase.analytics)
     implementation(libs.play.services.tasks)
-    implementation(libs.firebase.functions)
 
     // Google Sign-In
     implementation("com.google.android.gms:play-services-auth:21.1.0")

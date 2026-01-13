@@ -1,3 +1,4 @@
+
 package com.example.foodplanner.ui.nav
 
 import androidx.compose.foundation.layout.Box
@@ -6,7 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Face
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -20,22 +20,25 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.foodplanner.ui.auth.AuthScreen
 import com.example.foodplanner.ui.auth.AuthState
 import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.cart.CartScreen
+import com.example.foodplanner.ui.chat.ChatListScreen
 import com.example.foodplanner.ui.chat.ChatScreen
 import com.example.foodplanner.ui.components.GreetingBar
 import com.example.foodplanner.ui.pantry.InventoryScreen
 import com.example.foodplanner.ui.recipes.RecipeListScreen
+
 
 @Composable
 fun AppNav() {
@@ -75,10 +78,8 @@ fun AppNav() {
 fun MainScreen(authViewModel: AuthViewModel) {
     val navController = rememberNavController()
     Scaffold(
-        // Pasamos el authViewModel al GreetingBar modificado
         topBar = { GreetingBar(authViewModel) },
         bottomBar = { BottomNavigationBar(navController) }
-        // Se ha eliminado el floatingActionButton
     ) { padding ->
         Box(
             modifier = Modifier
@@ -89,7 +90,18 @@ fun MainScreen(authViewModel: AuthViewModel) {
                 composable(Routes.Inventory) { InventoryScreen() }
                 composable(Routes.Recipes) { RecipeListScreen() }
                 composable(Routes.Cart) { CartScreen() }
-                composable(Routes.Chat) { ChatScreen() } // Nueva ruta
+                composable(Routes.ChatList) { 
+                    ChatListScreen(onChatClick = { chatId ->
+                        navController.navigate(Routes.chat(chatId))
+                    })
+                }
+                composable(
+                    route = "chat/{chatId}",
+                    arguments = listOf(navArgument("chatId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val chatId = backStackEntry.arguments?.getString("chatId") ?: return@composable
+                    ChatScreen(chatId = chatId)
+                }
             }
         }
     }
@@ -105,7 +117,7 @@ fun BottomNavigationBar(navController: NavHostController) {
             Triple(Routes.Inventory, "Inventory", Icons.AutoMirrored.Filled.List),
             Triple(Routes.Recipes, "Recipes", Icons.AutoMirrored.Filled.List),
             Triple(Routes.Cart, "Cart", Icons.AutoMirrored.Filled.List),
-            Triple(Routes.Chat, "AI Chef", Icons.Default.Face) // Nueva pestaña
+            Triple(Routes.ChatList, "AI Chef", Icons.Default.Face)
         )
         items.forEach { (route, label, icon) ->
             NavigationBarItem(
