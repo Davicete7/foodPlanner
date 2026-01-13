@@ -6,12 +6,15 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.MaterialTheme
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.foodplanner.ui.nav.AppNav
 import com.example.foodplanner.ui.theme.FoodPlannerTheme
+import com.example.foodplanner.viewmodel.PantryViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
 
@@ -25,6 +28,12 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         askNotificationPermission()
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            val pantryViewModel: PantryViewModel by viewModels { PantryViewModel.Factory(application, userId) }
+            pantryViewModel.schedulePantryCheck()
+        }
 
         setContent {
             FoodPlannerTheme {

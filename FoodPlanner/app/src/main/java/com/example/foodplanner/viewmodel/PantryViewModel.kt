@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.foodplanner.data.db.entities.CartItem
 import com.example.foodplanner.data.db.entities.InventoryItem
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 enum class SortOrder {
     NAME,
@@ -103,9 +105,9 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
         }
     }
 
-    private fun triggerPantryCheck() {
+    fun schedulePantryCheck() {
         val inputData = Data.Builder().putString("userId", userId).build()
-        val workRequest = OneTimeWorkRequestBuilder<PantryWorker>()
+        val workRequest = PeriodicWorkRequestBuilder<PantryWorker>(60, TimeUnit.SECONDS)
             .setInputData(inputData)
             .build()
         workManager.enqueue(workRequest)
@@ -115,7 +117,6 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
         viewModelScope.launch {
             try {
                 repo.addOrUpdateInventory(name, qty, unit, expirationDate)
-                triggerPantryCheck()
             } catch (e: Exception) {
                 Log.e("PantryViewModel", "Error saving item: ${e.message}")
             }
@@ -145,7 +146,6 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
         viewModelScope.launch {
             try {
                 repo.updateInventoryItem(id, newName, newQty, newUnit, newExpirationDate)
-                triggerPantryCheck()
             } catch (e: Exception) {
                 Log.e("PantryViewModel", "Error updating item: ${e.message}")
             }
@@ -155,7 +155,6 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
         viewModelScope.launch {
             try {
                 repo.deleteInventoryItem(id)
-                triggerPantryCheck()
             } catch (e: Exception) {
                 Log.e("PantryViewModel", "Error deleting item: ${e.message}")
             }
@@ -205,7 +204,6 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
                 unit = item.unit,
                 expirationDate = expirationDate
             )
-            triggerPantryCheck()
 
             item.id?.let { repo.deleteCartItem(it) }
 
