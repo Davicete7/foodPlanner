@@ -12,6 +12,7 @@ import com.example.foodplanner.data.model.ChatMessage
 import com.example.foodplanner.data.repo.ChatRepository
 import com.example.foodplanner.data.repo.PantryRepository
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.content
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,29 +27,23 @@ class ChatViewModel(app: Application, private val userId: String, private val ch
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    private lateinit var generativeModel: GenerativeModel
-
-    init {
-        if (BuildConfig.GEMINI_API_KEY.isNotBlank()) {
-            generativeModel = GenerativeModel(
-                modelName = "gemini-2.5-flash-lite",
-                apiKey = BuildConfig.GEMINI_API_KEY
-            )
-        }
-    }
+    private val generativeModel: GenerativeModel = GenerativeModel(
+        modelName = "gemini-2.5-flash-lite",
+        apiKey = BuildConfig.GEMINI_API_KEY
+    )
 
     fun getMessagesFlow(): Query {
         return chatRepo.getMessagesFlow(chatId)
     }
 
     fun sendMessage(question: String) {
-        if (question.isBlank() || !::generativeModel.isInitialized) return
+        if (question.isBlank()) return
 
-        val userMessage = ChatMessage(text = question, isUser = true)
         viewModelScope.launch {
+            val userMessage = ChatMessage(text = question, isUser = true)
             chatRepo.saveMessage(chatId, userMessage)
         }
-        
+
         _isLoading.value = true
 
         viewModelScope.launch {
@@ -65,24 +60,42 @@ class ChatViewModel(app: Application, private val userId: String, private val ch
                     }
                 }
 
-                val prompt = """
-                    Actúa como un chef experto y amigable llamado "AI Chef". Tu tarea es ayudar a un usuario a decidir qué cocinar.
+                // Cargar el historial de chat actualizado cada vez
+                val chatHistory = chatRepo.getMessages(chatId).map {
+                    content(if (it.isUser) "user" else "model") { text(it.text) }
+                }
 
-                    Aquí está el inventario actual del usuario:
-                    $inventoryList
+                val systemPrompt = """
+                Eres un chef experto. Tu tono es amigable y servicial.
+                Tu tarea principal es ayudar al usuario a cocinar con lo que tiene.
 
-                    Esta es la pregunta del usuario:
-                    "$question"
+                **INVENTARIO DEL USUARIO:**
+                ```
+                $inventoryList
+                ```
 
-                    Instrucciones:
-                    1. Recomienda una o dos recetas sencillas que se puedan hacer con los ingredientes del inventario.
-                    2. Prioriza el uso de ingredientes que estén a punto de caducar.
-                    3. Si para una receta faltan uno o dos ingredientes clave, menciónalo como una sugerencia (ej. "si tuvieras huevos, podrías hacer...").
-                    4. La respuesta debe ser concisa, amigable y fácil de entender. No uses formatos complejos.
-                    5. Responde siempre en español.
-                """.trimIndent()
+                **INSTRUCCIONES IMPORTANTES:**
+                1. **Si el usuario pide una receta específica** (ej: "¿cómo hago una tortilla de patatas?"):
+                   - Primero, compara los ingredientes de la receta con el **INVENTARIO DEL USUARIO**.
+                   - Informa amablemente qué ingredientes le faltan.
+                   - Después, proporciona la receta completa (ingredientes y pasos).
+                   - **NO** te niegues a dar la receta aunque no tenga los ingredientes.
 
-                val response = generativeModel.generateContent(prompt)
+                2. **Si el usuario hace una pregunta general** (ej: "¿qué puedo cocinar?", "¿alguna idea para la cena?"):
+                   - Basa tus sugerencias **principalmente** en el **INVENTARIO DEL USUARIO**.
+                   - Prioriza el uso de ingredientes que estén a punto de caducar.
+
+                3. **Conversación:**
+                   - Responde de forma natural. **No te presentes ("Hola, soy AI Chef") en cada mensaje.**
+                   - Mantén el contexto de los mensajes anteriores.
+                   - Sé conciso y responde siempre en español.
+
+                **PREGUNTA DEL USUARIO:**
+                "$question"
+                """
+
+                val chat = generativeModel.startChat(history = chatHistory)
+                val response = chat.sendMessage(systemPrompt)
 
                 response.text?.let {
                     val aiMessage = ChatMessage(text = it, isUser = false)

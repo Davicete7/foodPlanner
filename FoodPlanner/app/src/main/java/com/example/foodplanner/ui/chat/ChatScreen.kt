@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -130,7 +131,7 @@ fun ChatScreen(chatId: String, onBack: () -> Unit) {
 
 @Composable
 fun MessageBubble(text: String, isUser: Boolean) {
-    val bubbleColor = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+    val bubbleColor = if (isUser) MaterialTheme.colorScheme.primaryContainer else Color.LightGray
     val align = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
 
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = align) {

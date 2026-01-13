@@ -39,6 +39,14 @@ class ChatRepository(private val userId: String) {
             .orderBy("timestamp", Query.Direction.ASCENDING)
     }
 
+    suspend fun getMessages(chatId: String): List<ChatMessage> {
+        return getUserChatsRef().document(chatId).collection("messages")
+            .orderBy("timestamp", Query.Direction.ASCENDING)
+            .get()
+            .await()
+            .toObjects(ChatMessage::class.java)
+    }
+
     suspend fun saveMessage(chatId: String, message: ChatMessage) {
         getUserChatsRef().document(chatId).collection("messages").add(message).await()
     }
