@@ -15,6 +15,6 @@ data class Chat(
 data class ChatMessage(
     @DocumentId val id: String = "",
     val text: String = "",
-    val isUser: Boolean = true,
+    @JvmField val isUser: Boolean = true,
     @ServerTimestamp val timestamp: Date? = null
 )

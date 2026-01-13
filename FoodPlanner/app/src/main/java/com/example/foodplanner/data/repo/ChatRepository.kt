@@ -21,17 +21,17 @@ class ChatRepository(private val userId: String) {
     }
 
     suspend fun createNewChat(): String {
-        val newChat = Chat(userId = userId)
+        val count = getUserChatsRef().get().await().size()
+        val newChat = Chat(
+            userId = userId,
+            title = "New chat ${count + 1}"
+        )
         val docRef = getUserChatsRef().add(newChat).await()
         return docRef.id
     }
 
     suspend fun deleteChat(chatId: String) {
         getUserChatsRef().document(chatId).delete().await()
-        // También necesitarás borrar todos los mensajes de este chat (subcolección)
-        // Esto se puede hacer con una función de Cloud o un batch job, ya que borrar colecciones directamente
-        // desde el cliente no es recomendable para colecciones grandes.
-        // Por simplicidad aquí, lo dejamos así, pero es algo a tener en cuenta.
     }
 
     fun getMessagesFlow(chatId: String): Query {
@@ -41,5 +41,9 @@ class ChatRepository(private val userId: String) {
 
     suspend fun saveMessage(chatId: String, message: ChatMessage) {
         getUserChatsRef().document(chatId).collection("messages").add(message).await()
+    }
+
+    suspend fun updateChatTitle(chatId: String, newTitle: String) {
+        getUserChatsRef().document(chatId).update("title", newTitle).await()
     }
 }

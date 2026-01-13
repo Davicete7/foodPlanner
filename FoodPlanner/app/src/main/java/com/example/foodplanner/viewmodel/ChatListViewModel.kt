@@ -27,4 +27,10 @@ class ChatListViewModel(private val userId: String) : ViewModel() {
             chatRepo.deleteChat(chatId)
         }
     }
+
+    fun updateChatTitle(chatId: String, newTitle: String) {
+        viewModelScope.launch {
+            chatRepo.updateChatTitle(chatId, newTitle)
+        }
+    }
 }

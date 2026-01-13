@@ -100,7 +100,10 @@ fun MainScreen(authViewModel: AuthViewModel) {
                     arguments = listOf(navArgument("chatId") { type = NavType.StringType })
                 ) { backStackEntry ->
                     val chatId = backStackEntry.arguments?.getString("chatId") ?: return@composable
-                    ChatScreen(chatId = chatId)
+                    ChatScreen(
+                        chatId = chatId,
+                        onBack = { navController.popBackStack() }
+                    )
                 }
             }
         }

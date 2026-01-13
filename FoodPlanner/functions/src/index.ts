@@ -1,6 +1,6 @@
 import {genkit, z} from "genkit";
 import {firebase} from "@genkit-ai/firebase";
-import {googleAI, gemini15Flash} from "@genkit-ai/googleai";
+import {googleAI, geminiPro} from "@genkit-ai/googleai";
 import * as admin from "firebase-admin";
 import {onCall} from "firebase-functions/v2/https";
 import * as functions from "firebase-functions";
@@ -12,7 +12,7 @@ const db = admin.firestore();
 // 1. Inicializar Genkit (Nueva forma)
 const ai = genkit({
   plugins: [firebase(), googleAI()],
-  model: gemini15Flash, // Modelo por defecto
+  model: geminiPro, // Modelo por defecto
 });
 
 // 2. Definir el esquema de entrada (opcional, pero buena práctica)
