@@ -8,7 +8,7 @@ import java.util.Date
 data class Chat(
     @DocumentId val id: String = "",
     val userId: String = "",
-    val title: String = "Nueva Conversación",
+    val title: String = "New Conversation",
     @ServerTimestamp val createdAt: Date? = null
 )
 

@@ -44,7 +44,7 @@ class PantryRepository(private val userId: String) {
 
         var compatibleIngredient: com.google.firebase.firestore.DocumentSnapshot? = null
 
-        // Find a compatible ingridient (mass with mass, volume with volume, etc.)
+        // Find a compatible ingredient (mass with mass, volume with volume, etc.)
         if (snapshot != null && !snapshot.isEmpty) {
             for (ingredient in snapshot.documents) {
                 val ingredientUnit = ingredient.getString("unit") ?: ""
@@ -65,7 +65,7 @@ class PantryRepository(private val userId: String) {
         }
 
         if (compatibleIngredient != null) {
-            // Update ingridient
+            // Update ingredient
             val currentQty = compatibleIngredient.getDouble("quantity") ?: 0.0
             val currentUnit = compatibleIngredient.getString("unit") ?: ""
 
@@ -86,7 +86,7 @@ class PantryRepository(private val userId: String) {
             compatibleIngredient.reference.update(updates).await()
 
         } else {
-            // Create new ingridient
+            // Create new ingredient
             val newIngredientRef = userInventory.document()
             val newIngredient = InventoryItem(
                 name = name.trim(),
@@ -99,8 +99,6 @@ class PantryRepository(private val userId: String) {
         }
     }
 
-
-
     suspend fun addMissingToCart(need: List<Triple<String, Double, String>>): List<String> {
         val currentInventory = inventory.first().associateBy { it.searchableName }
         val currentCart = cart.first().associateBy { it.searchableName }
@@ -112,9 +110,9 @@ class PantryRepository(private val userId: String) {
             val inventoryItem = currentInventory[searchableName]
 
             // Calculate the quantity that we have to add to the cart
-            // checking the ingridients that we already have in the inventory
+            // checking the ingredients that we already have in the inventory
             val quantityToAdd = if (inventoryItem != null) {
-                // If we have the item, we chek if we can subtract them
+                // If we have the item, we check if we can subtract them
                 calculateMissingAmount(
                     neededQty = qtyNeeded,
                     neededUnit = unitNeeded,
@@ -157,7 +155,6 @@ class PantryRepository(private val userId: String) {
         return addedItems
     }
 
-
     private fun calculateMissingAmount(
         neededQty: Double,
         neededUnit: String,
@@ -167,7 +164,7 @@ class PantryRepository(private val userId: String) {
         val neededType = getUnitType(neededUnit)
         val haveType = getUnitType(haveUnit)
 
-        // If the unit types doesn't match (ex: Kg vs Liters, o Kg vs Pcs),
+        // If the unit types don't match (e.g., Kg vs Liters, or Kg vs Pcs),
         // we cannot subtract them. Add the quantity of the recipe.
         if (neededType != haveType) {
             return neededQty
@@ -183,7 +180,7 @@ class PantryRepository(private val userId: String) {
                 fromBase(missingInBase, neededUnit)
             }
             UnitType.OTHER -> {
-                // Fot other units we subtract the quantities directly (this is the case of pcs)
+                // For other units, we subtract the quantities directly (this is the case of pcs)
                 (neededQty - haveQty).coerceAtLeast(0.0)
             }
         }
@@ -205,11 +202,11 @@ class PantryRepository(private val userId: String) {
         return when {
             // Mass, base in g
             u.startsWith("k") -> qty * 1000.0 // kg -> g
-            u == "g" || u == "gr" || u.startsWith("gram") -> qty // ya está en g
+            u == "g" || u == "gr" || u.startsWith("gram") -> qty // already in g
 
             // Volume, base in ml
             u == "l" || u.startsWith("liter") || u.startsWith("litro") -> qty * 1000.0 // L -> ml
-            else -> qty // ml o desconocido se queda igual
+            else -> qty // ml or unknown remains the same
         }
     }
 
@@ -235,9 +232,9 @@ class PantryRepository(private val userId: String) {
     }
 
     /**
-     * Importante: el Map pasado a update tiene que ser Map<String, Any>,
-     * no Map<String, Any?>. Construimos el mapa sin nulos y sólo añadimos
-     * expirationDate si no es null.
+     * Important: the Map passed to update has to be Map<String, Any>,
+     * not Map<String, Any?>. We build the map without nulls and only add
+     * expirationDate if it is not null.
      */
     suspend fun updateInventoryItem(
         id: String,
@@ -280,7 +277,7 @@ class PantryRepository(private val userId: String) {
         val searchableName = name.lowercase().trim()
         val incomingType = getUnitType(unit)
 
-        // Take all the ingridients with the same name
+        // Take all the ingredients with the same name
         val snapshot = userCart
             .whereEqualTo("searchableName", searchableName)
             .get()
@@ -325,7 +322,7 @@ class PantryRepository(private val userId: String) {
             compatibleDoc.reference.update("quantity", newTotalQty).await()
 
         } else {
-            // Crate (if not exists in the list or the unit is incompatible)
+            // Create (if not exists in the list or the unit is incompatible)
             val newItemRef = userCart.document()
             val newItem = CartItem(
                 name = name.trim(),

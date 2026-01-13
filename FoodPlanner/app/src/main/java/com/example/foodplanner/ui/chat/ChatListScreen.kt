@@ -44,7 +44,7 @@ fun ChatListScreen(onChatClick: (String) -> Unit) {
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     if (userId == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Inicia sesión para ver tus chats.")
+            Text("Log in to see your chats.")
         }
         return
     }
@@ -76,7 +76,7 @@ fun ChatListScreen(onChatClick: (String) -> Unit) {
             FloatingActionButton(onClick = {
                 viewModel.createNewChat(onChatClick)
             }) {
-                Icon(Icons.Default.Add, contentDescription = "Nuevo Chat")
+                Icon(Icons.Default.Add, contentDescription = "New Chat")
             }
         }
     ) { padding ->
@@ -107,15 +107,15 @@ fun ChatListScreen(onChatClick: (String) -> Unit) {
 @Composable
 fun ChatItem(chat: Chat, onDelete: () -> Unit, onEdit: () -> Unit, onClick: () -> Unit) {
     ListItem(
-        headlineContent = { Text(chat.title.ifBlank { "Conversación sin título" }) },
+        headlineContent = { Text(chat.title.ifBlank { "Untitled Conversation" }) },
         modifier = Modifier.clickable(onClick = onClick),
         trailingContent = {
             Row {
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Editar Título")
+                    Icon(Icons.Default.Edit, contentDescription = "Edit Title")
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Borrar Chat")
+                    Icon(Icons.Default.Delete, contentDescription = "Delete Chat")
                 }
             }
         }
@@ -128,23 +128,23 @@ fun EditChatTitleDialog(chat: Chat, onDismiss: () -> Unit, onConfirm: (String) -
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Editar título del chat") },
+        title = { Text("Edit chat title") },
         text = {
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Nuevo título") },
+                label = { Text("New title") },
                 modifier = Modifier.fillMaxWidth()
             )
         },
         confirmButton = {
             Button(onClick = { onConfirm(title) }) {
-                Text("Guardar")
+                Text("Save")
             }
         },
         dismissButton = {
             Button(onClick = onDismiss) {
-                Text("Cancelar")
+                Text("Cancel")
             }
         }
     )

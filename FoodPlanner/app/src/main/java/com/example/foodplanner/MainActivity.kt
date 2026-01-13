@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
-        // Handle permission grant/denial
+        // Handle permission grant/denial if needed
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

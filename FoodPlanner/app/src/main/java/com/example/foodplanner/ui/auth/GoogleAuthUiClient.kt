@@ -22,10 +22,10 @@ class GoogleAuthUiClient(private val context: Context) {
                     BeginSignInRequest.GoogleIdTokenRequestOptions.Builder()
                         .setSupported(true)
                         .setServerClientId(context.getString(R.string.default_web_client_id))
-                        .setFilterByAuthorizedAccounts(false) // recomendado por Google
+                        .setFilterByAuthorizedAccounts(false) // Recommended by Google
                         .build()
                 )
-                .setAutoSelectEnabled(false) // evita login automático no deseado
+                .setAutoSelectEnabled(false) // Avoids unwanted automatic login
                 .build()
 
             val result = oneTapClient.beginSignIn(signInRequest).await()

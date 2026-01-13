@@ -14,7 +14,7 @@ data class InventoryItem(
     val expirationDate: Long? = null,
     @ServerTimestamp val updatedAt: Date? = null
 ) {
-    // No-arg constructor for Firestore
+    // No-arg constructor required for Firestore
     constructor() : this(null, "", "", 0.0, "pcs", null, null)
 
     fun isExpiringSoon(days: Int = 3): Boolean {

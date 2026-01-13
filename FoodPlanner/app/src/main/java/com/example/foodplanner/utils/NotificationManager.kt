@@ -29,6 +29,6 @@ class NotificationManager(private val context: Context) {
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
 
-        notificationManager.notify((0..1000).random(), notification)
+        notificationManager.notify(1, notification)
     }
 }

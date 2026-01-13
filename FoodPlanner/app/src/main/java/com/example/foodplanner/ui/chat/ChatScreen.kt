@@ -53,7 +53,7 @@ fun ChatScreen(chatId: String, onBack: () -> Unit) {
 
     if (userId == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Inicia sesión para usar el AI Chef.")
+            Text("Log in to use the AI Chef.")
         }
         return
     }
@@ -81,10 +81,10 @@ fun ChatScreen(chatId: String, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("IA Chef") },
+                title = { Text("Chef") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -113,7 +113,7 @@ fun ChatScreen(chatId: String, onBack: () -> Unit) {
                     value = inputText,
                     onValueChange = { inputText = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("¿Qué cocino hoy?") },
+                    placeholder = { Text("What should I cook today?") },
                     enabled = !isLoading
                 )
                 IconButton(onClick = {

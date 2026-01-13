@@ -1,44 +1,44 @@
 package com.example.foodplanner.ui.pantry
 
 import android.app.Application
+import android.app.DatePickerDialog
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.foodplanner.viewmodel.PantryViewModel
-import com.example.foodplanner.data.db.entities.InventoryItem
-import androidx.compose.foundation.layout.*
-import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Icon
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Text
-import androidx.compose.material3.FilterChip
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.rotate
-import androidx.compose.foundation.shape.RoundedCornerShape
-import android.app.DatePickerDialog
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.foodplanner.data.db.entities.InventoryItem
 import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.components.UnitSelector
 import com.example.foodplanner.ui.components.availableUnits
+import com.example.foodplanner.viewmodel.PantryViewModel
+import com.example.foodplanner.viewmodel.SortOrder
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import com.example.foodplanner.viewmodel.SortOrder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,8 +59,7 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
             var name by remember { mutableStateOf("") }
             var qty by remember { mutableStateOf("") }
             var unit by remember { mutableStateOf("pcs") }
-            var expirationDate by remember { mutableStateOf<Long?>(null) } // fecha en milisegundos
-
+            var expirationDate by remember { mutableStateOf<Long?>(null) }
 
             var ingredientToEdit by remember { mutableStateOf<InventoryItem?>(null) }
 
@@ -73,7 +72,7 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Unidad",
+                    text = "Unit",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
                 )
@@ -95,7 +94,6 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
                     onDateSelected = { expirationDate = it }
                 )
 
-
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(onClick = {
@@ -108,11 +106,10 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 1. Search abr
                 OutlinedTextField(
                     value = searchText,
                     onValueChange = { vm.onSearchTextChange(it) },
-                    label = { Text("Buscar ingrediente...") },
+                    label = { Text("Search ingredient...") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
@@ -120,12 +117,10 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 2. Chips for sorting
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Chip for expiration
                     FilterChip(
                         selected = currentSort == SortOrder.EXPIRATION,
                         onClick = { vm.onSortOrderChange(SortOrder.EXPIRATION) },
@@ -137,7 +132,6 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
                         }
                     )
 
-                    // Chip for name
                     FilterChip(
                         selected = currentSort == SortOrder.NAME,
                         onClick = { vm.onSortOrderChange(SortOrder.NAME) },
@@ -151,7 +145,6 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-
 
                 LazyColumn {
                     items(inv) { row ->
@@ -168,7 +161,6 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
                     }
                 }
 
-                // If an ingredient is selected, show the edit dialog
                 ingredientToEdit?.let { ingredient ->
                     EditIngredientDialog(
                         ingredient = ingredient,
@@ -201,9 +193,7 @@ fun DateSelector(
     val calendar = Calendar.getInstance()
     val displayText = selectedDate?.let {
         SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(it))
-    } ?: "dd/MM/yyyy" // placeholder
-
-    var expanded by remember { mutableStateOf(false) }
+    } ?: "dd/MM/yyyy"
 
     Box(
         modifier = Modifier
@@ -242,10 +232,6 @@ fun DateSelector(
     }
 }
 
-
-
-
-// Show a row with an ingredient and its options
 @Composable
 fun InventoryRow(
     item: InventoryItem,
@@ -300,7 +286,6 @@ fun InventoryRow(
     }
 }
 
-// Dialog to modify the ingredient
 @Composable
 fun EditIngredientDialog(
     ingredient: InventoryItem,
@@ -351,7 +336,6 @@ fun EditIngredientDialog(
                     selectedDate = expirationDate,
                     onDateSelected = { expirationDate = it }
                 )
-
 
             }
         },

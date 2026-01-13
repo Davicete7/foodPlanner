@@ -120,7 +120,7 @@ fun BottomNavigationBar(navController: NavHostController) {
             Triple(Routes.Inventory, "Inventory", Icons.AutoMirrored.Filled.List),
             Triple(Routes.Recipes, "Recipes", Icons.AutoMirrored.Filled.List),
             Triple(Routes.Cart, "Cart", Icons.AutoMirrored.Filled.List),
-            Triple(Routes.ChatList, "AI Chef", Icons.Default.Face)
+            Triple(Routes.ChatList, "Chef", Icons.Default.Face)
         )
         items.forEach { (route, label, icon) ->
             NavigationBarItem(

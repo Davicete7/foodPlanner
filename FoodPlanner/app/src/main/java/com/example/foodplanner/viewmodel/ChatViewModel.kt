@@ -50,47 +50,47 @@ class ChatViewModel(app: Application, private val userId: String, private val ch
             try {
                 val inventory = pantryRepo.inventory.first()
                 val inventoryList = if (inventory.isEmpty()) {
-                    "El inventario está vacío."
+                    "The inventory is empty."
                 } else {
                     inventory.joinToString("\n") { item ->
                         val expiry = item.expirationDate?.let {
-                            " (caduca: ${java.text.SimpleDateFormat("dd/MM/yyyy").format(java.util.Date(it))})"
+                            " (expires: ${java.text.SimpleDateFormat("dd/MM/yyyy").format(java.util.Date(it))})"
                         } ?: ""
                         "- ${item.name}: ${item.quantity} ${item.unit}${expiry}"
                     }
                 }
 
-                // Cargar el historial de chat actualizado cada vez
+                // Load the updated chat history each time
                 val chatHistory = chatRepo.getMessages(chatId).map {
                     content(if (it.isUser) "user" else "model") { text(it.text) }
                 }
 
                 val systemPrompt = """
-                Eres un chef experto. Tu tono es amigable y servicial.
-                Tu tarea principal es ayudar al usuario a cocinar con lo que tiene.
+                You are an expert chef. Your tone is friendly and helpful.
+                Your main task is to help the user cook with what they have.
 
-                **INVENTARIO DEL USUARIO:**
+                **USER'S INVENTORY:**
                 ```
                 $inventoryList
                 ```
 
-                **INSTRUCCIONES IMPORTANTES:**
-                1. **Si el usuario pide una receta específica** (ej: "¿cómo hago una tortilla de patatas?"):
-                   - Primero, compara los ingredientes de la receta con el **INVENTARIO DEL USUARIO**.
-                   - Informa amablemente qué ingredientes le faltan.
-                   - Después, proporciona la receta completa (ingredientes y pasos).
-                   - **NO** te niegues a dar la receta aunque no tenga los ingredientes.
+                **IMPORTANT INSTRUCTIONS:**
+                1. **If the user asks for a specific recipe** (e.g., "how do I make a Spanish omelette?"):
+                   - First, compare the recipe's ingredients with the **USER'S INVENTORY**.
+                   - Kindly inform them which ingredients are missing.
+                   - Then, provide the full recipe (ingredients and steps).
+                   - **DO NOT** refuse to provide the recipe even if they don't have the ingredients.
 
-                2. **Si el usuario hace una pregunta general** (ej: "¿qué puedo cocinar?", "¿alguna idea para la cena?"):
-                   - Basa tus sugerencias **principalmente** en el **INVENTARIO DEL USUARIO**.
-                   - Prioriza el uso de ingredientes que estén a punto de caducar.
+                2. **If the user asks a general question** (e.g., "what can I cook?", "any ideas for dinner?"):
+                   - Base your suggestions **mainly** on the **USER'S INVENTORY**.
+                   - Prioritize using ingredients that are about to expire.
 
-                3. **Conversación:**
-                   - Responde de forma natural. **No te presentes ("Hola, soy AI Chef") en cada mensaje.**
-                   - Mantén el contexto de los mensajes anteriores.
-                   - Sé conciso y responde siempre en español.
+                3. **Conversation:**
+                   - Respond naturally. **Do not introduce yourself ("Hello, I'm AI Chef") in every message.**
+                   - Maintain the context of previous messages.
+                   - Be concise and always respond in English.
 
-                **PREGUNTA DEL USUARIO:**
+                **USER'S QUESTION:**
                 "$question"
                 """
 
@@ -104,7 +104,7 @@ class ChatViewModel(app: Application, private val userId: String, private val ch
 
             } catch (e: Exception) {
                 Log.e("ChatViewModel", "Error calling Gemini API", e)
-                val errorMessage = ChatMessage(text = "Hubo un error al contactar con el AI Chef: ${e.message}", isUser = false)
+                val errorMessage = ChatMessage(text = "There was an error contacting the AI Chef: ${e.message}", isUser = false)
                 chatRepo.saveMessage(chatId, errorMessage)
             } finally {
                 _isLoading.value = false

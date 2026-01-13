@@ -41,13 +41,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 try {
                     val currentUser = firebaseAuth.currentUser
                     if (currentUser != null) {
-                        // Intentamos obtener el usuario de Firestore
+                        // Try to get the user from Firestore
                         val firestoreUser = userRepository.getUser(currentUser.uid)
                         _user.value = firestoreUser
 
-                        // Si el usuario existe en Auth pero no en Firestore (ej. recién creado por Google Sign In),
-                        // esperamos a que onGoogleSignInResult lo cree y actualice el estado,
-                        // pero marcamos como Authenticated para que la navegación no se bloquee si ya tenemos datos.
+                        // If the user exists in Auth but not in Firestore (e.g., recently created via Google Sign In),
+                        // we wait for onGoogleSignInResult to create it.
+                        // We set the state to Authenticated if a Firestore user already exists
+                        // to prevent navigation from being blocked.
                         if (firestoreUser != null) {
                             _authState.value = AuthState.Authenticated
                         }
@@ -70,16 +71,16 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 try {
                     val authResult = auth.signInWithCredential(result.credential).await()
                     authResult?.user?.let { firebaseUser ->
-                        // IMPORTANTE: Verificar si el usuario ya existe para no sobrescribir datos
+                        // IMPORTANT: Check if the user already exists to avoid overwriting data
                         val existingUser = userRepository.getUser(firebaseUser.uid)
 
                         if (existingUser == null) {
-                            // Usuario nuevo: lo creamos en Firestore
+                            // New user: create in Firestore
                             val newUser = User(uid = firebaseUser.uid, email = firebaseUser.email ?: "")
                             userRepository.createUser(newUser)
                             _user.value = newUser
                         } else {
-                            // Usuario existente: actualizamos el estado local
+                            // Existing user: update local state
                             _user.value = existingUser
                         }
                         _authState.value = AuthState.Authenticated
@@ -98,7 +99,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _authState.value = AuthState.Loading
             try {
                 auth.signInWithEmailAndPassword(email, password).await()
-                // El AuthStateListener se encargará de actualizar el estado a Authenticated
+                // The AuthStateListener will handle updating the state to Authenticated
             } catch (e: Exception) {
                 _authState.value = AuthState.Error(e.message ?: "Unknown error")
             }

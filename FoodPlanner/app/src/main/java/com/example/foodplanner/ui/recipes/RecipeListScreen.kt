@@ -30,7 +30,7 @@ fun RecipeListScreen(authViewModel: AuthViewModel = viewModel()) {
         }
     } else {
         userState?.let { user ->
-            // Inicialización correcta del ViewModel con la Factory y el UID
+            // Correct ViewModel initialization with the Factory and UID
             val factory = PantryViewModel.Factory(context.applicationContext as Application, user.uid)
             val vm: PantryViewModel = viewModel(factory = factory)
 
@@ -42,7 +42,7 @@ fun RecipeListScreen(authViewModel: AuthViewModel = viewModel()) {
                         Column(Modifier.padding(12.dp)) {
                             Text(r.name, style = MaterialTheme.typography.titleMedium)
 
-                            // Mostrar ingredientes de forma legible
+                            // Display ingredients in a readable format
                             val ingredientsText = r.ingredients.joinToString(separator = "\n") {
                                 "- ${it.name}: ${it.quantity} ${it.unit}"
                             }

@@ -29,14 +29,14 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
     val userState by authViewModel.user.collectAsState()
     val context = LocalContext.current
 
-    // Esperar a que el usuario esté cargado para inicializar el PantryViewModel
+    // Wait for the user to be loaded to initialize the PantryViewModel
     if (userState == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
     } else {
         userState?.let { user ->
-            // Creamos la factory con el UID del usuario actual
+            // Create the factory with the current user's UID
             val factory = PantryViewModel.Factory(context.applicationContext as Application, user.uid)
             val vm: PantryViewModel = viewModel(factory = factory)
 
@@ -62,7 +62,6 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                     Text("Add Item Manually", style = MaterialTheme.typography.titleSmall)
 
-                    // Input name
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
@@ -70,7 +69,6 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Input quantity and unit
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -85,17 +83,15 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        // Unit selector
                         Box(modifier = Modifier.weight(1f)) {
                             UnitSelector(
                                 selectedUnit = unit,
-                                availableUnits = availableUnits, // Asegúrate de tener esta lista disponible aquí
+                                availableUnits = availableUnits,
                                 onUnitSelected = { unit = it }
                             )
                         }
                     }
 
-                    // Add button
                     Button(
                         onClick = {
                             val quantityDouble = qty.toDoubleOrNull() ?: 0.0

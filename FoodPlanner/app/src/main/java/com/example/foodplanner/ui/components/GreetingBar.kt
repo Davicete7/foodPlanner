@@ -30,7 +30,7 @@ fun GreetingBar(authViewModel: AuthViewModel) {
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false }
             ) {
-                // Muestra el correo del usuario (si existe) como un elemento no clicable
+                // Shows the user's email (if it exists) as a non-clickable item
                 DropdownMenuItem(
                     text = {
                         Text(

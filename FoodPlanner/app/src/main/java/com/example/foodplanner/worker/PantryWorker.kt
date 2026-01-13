@@ -21,13 +21,13 @@ class PantryWorker(appContext: Context, workerParams: WorkerParameters) : Corout
             // Check for items nearing expiration
             val expiringSoon = inventory.filter { it.isExpiringSoon() }
             expiringSoon.forEach { 
-                notificationManager.sendNotification("Expiration alert", "Attention! Your ${it.name} expirates in 3 days.")
+                notificationManager.sendNotification("Expiration Alert", "Attention! Your ${it.name} expires in 3 days.")
             }
 
             // Check for low stock items
             val lowStock = inventory.filter { it.isLowStock() }
             lowStock.forEach { 
-                notificationManager.sendNotification("Low stock", "You are running low on ${it.name}.")
+                notificationManager.sendNotification("Low Stock", "You are running low on ${it.name}.")
             }
 
             Result.success()
