@@ -42,7 +42,7 @@ sealed class NotificationEvent {
 
 class PantryViewModel(app: Application, private val userId: String) : AndroidViewModel(app) {
     private val repo = PantryRepository(userId)
-    private val recipeRepo = RecipeRepository(app)
+    private val recipeRepo = RecipeRepository(userId)
     private val workManager = WorkManager.getInstance(app)
 
     private val _inventory = MutableStateFlow<List<InventoryItem>>(emptyList())
@@ -51,7 +51,13 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
     private val _cart = MutableStateFlow<List<CartItem>>(emptyList())
     val cart: StateFlow<List<CartItem>> = _cart.asStateFlow()
 
-    val recipes = MutableStateFlow<List<RecipeDTO>>(emptyList())
+    // --- Recipes ---
+    private val _searchedRecipes = MutableStateFlow<List<RecipeDTO>>(emptyList())
+    val searchedRecipes: StateFlow<List<RecipeDTO>> = _searchedRecipes.asStateFlow()
+
+    private val _savedRecipes = MutableStateFlow<List<RecipeDTO>>(emptyList())
+    val savedRecipes: StateFlow<List<RecipeDTO>> = _savedRecipes.asStateFlow()
+
 
     private val _searchText = MutableStateFlow("")
     val searchText = _searchText.asStateFlow()
@@ -96,11 +102,50 @@ class PantryViewModel(app: Application, private val userId: String) : AndroidVie
             .catch { e -> Log.e("PantryViewModel", "Error loading cart: ${e.message}") }
             .launchIn(viewModelScope)
 
+        // Load initial data for recipes
+        loadSavedRecipes()
+        searchRecipes("chicken") // Default search to avoid blank screen
+    }
+
+    // --- Recipe Methods ---
+    fun searchRecipes(query: String) {
         viewModelScope.launch {
             try {
-                recipes.value = recipeRepo.loadAll()
+                _searchedRecipes.value = recipeRepo.searchRecipes(query)
             } catch (e: Exception) {
-                Log.e("PantryViewModel", "Error loading recipes: ${e.message}")
+                Log.e("PantryViewModel", "Error searching recipes: ${e.message}")
+            }
+        }
+    }
+
+    private fun loadSavedRecipes() {
+        viewModelScope.launch {
+            try {
+                _savedRecipes.value = recipeRepo.getSavedRecipes()
+            } catch (e: Exception) {
+                Log.e("PantryViewModel", "Error loading saved recipes: ${e.message}")
+            }
+        }
+    }
+
+    fun saveRecipe(recipe: RecipeDTO) {
+        viewModelScope.launch {
+            try {
+                recipeRepo.saveRecipe(recipe)
+                loadSavedRecipes() // Refresh list of saved recipes
+            } catch (e: Exception) {
+                Log.e("PantryViewModel", "Error saving recipe: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteSavedRecipe(recipeId: String) {
+        viewModelScope.launch {
+            try {
+                recipeRepo.deleteSavedRecipe(recipeId)
+                loadSavedRecipes() // Refresh list of saved recipes
+            } catch (e: Exception) {
+                Log.e("PantryViewModel", "Error deleting recipe: ${e.message}")
             }
         }
     }
