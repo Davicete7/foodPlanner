@@ -1,8 +1,8 @@
-
 package com.example.foodplanner.ui.chat
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,13 +34,20 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.foodplanner.data.model.Chat
+import com.example.foodplanner.ui.auth.AuthViewModel
+import com.example.foodplanner.ui.components.GreetingBar
 import com.example.foodplanner.viewmodel.ChatListViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatListScreen(onChatClick: (String) -> Unit) {
+fun ChatListScreen(
+    navController: NavController, // Added for navigation consistency
+    authViewModel: AuthViewModel, // Required for the GreetingBar
+    onChatClick: (String) -> Unit
+) {
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     if (userId == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -49,6 +56,7 @@ fun ChatListScreen(onChatClick: (String) -> Unit) {
         return
     }
 
+    // ViewModel setup using a factory to inject the userId
     val viewModel: ChatListViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             @Suppress("UNCHECKED_CAST")
@@ -56,6 +64,7 @@ fun ChatListScreen(onChatClick: (String) -> Unit) {
         }
     })
 
+    // Real-time updates for the list of chats from Firestore
     val chatsQuery = viewModel.getChatsFlow()
     val chats by produceState<List<Chat>>(initialValue = emptyList(), key1 = chatsQuery) {
         val listener = chatsQuery.addSnapshotListener { snapshot, error ->
@@ -80,17 +89,32 @@ fun ChatListScreen(onChatClick: (String) -> Unit) {
             }
         }
     ) { padding ->
-        LazyColumn(modifier = Modifier.padding(padding)) {
-            items(chats) { chat ->
-                ChatItem(
-                    chat = chat,
-                    onDelete = { viewModel.deleteChat(chat.id) },
-                    onEdit = { editingChat = chat },
-                    onClick = { onChatClick(chat.id) }
-                )
+        // Main container with GreetingBar at the top
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // 1. Added GreetingBar
+            GreetingBar(
+                authViewModel = authViewModel,
+                onStatsClick = { navController.navigate("stats") }
+            )
+
+            // 2. Chat List
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(chats) { chat ->
+                    ChatItem(
+                        chat = chat,
+                        onDelete = { viewModel.deleteChat(chat.id) },
+                        onEdit = { editingChat = chat },
+                        onClick = { onChatClick(chat.id) }
+                    )
+                }
             }
         }
 
+        // Dialog for editing chat titles
         editingChat?.let {
             EditChatTitleDialog(
                 chat = it,

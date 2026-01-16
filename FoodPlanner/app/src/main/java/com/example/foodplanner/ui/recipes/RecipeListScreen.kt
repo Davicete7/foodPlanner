@@ -31,7 +31,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -47,14 +46,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.foodplanner.data.recipes.RecipeDTO
 import com.example.foodplanner.ui.auth.AuthViewModel
+import com.example.foodplanner.ui.components.GreetingBar
 import com.example.foodplanner.viewmodel.PantryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecipeListScreen(authViewModel: AuthViewModel = viewModel()) {
+fun RecipeListScreen(
+    navController: NavController, // Added navController parameter
+    authViewModel: AuthViewModel = viewModel()
+) {
     val userState by authViewModel.user.collectAsState()
     val context = LocalContext.current
 
@@ -68,7 +72,7 @@ fun RecipeListScreen(authViewModel: AuthViewModel = viewModel()) {
         return
     }
 
-    val user = userState!!  // aquí ya sabemos que no es null
+    val user = userState!!
 
     val factory = PantryViewModel.Factory(context.applicationContext as Application, user.uid)
     val vm: PantryViewModel = viewModel(factory = factory)
@@ -82,54 +86,63 @@ fun RecipeListScreen(authViewModel: AuthViewModel = viewModel()) {
 
     var searchText by remember { mutableStateOf(TextFieldValue("")) }
 
-    Scaffold(
-        /*topBar = {
-            TopAppBar(title = { Text("Recipes") })
-        }*/
-    ) { innerPadding ->
+    Scaffold { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = screenPadding, vertical = 12.dp)
         ) {
-            OutlinedTextField(
-                value = searchText,
-                onValueChange = {
-                    searchText = it
-                    vm.searchRecipes(it.text)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                label = { Text("Search recipes") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) }
+            // 1. Added GreetingBar for consistent header and access to Stats
+            GreetingBar(
+                authViewModel = authViewModel,
+                onStatsClick = { navController.navigate("stats") }
             )
 
-            Spacer(Modifier.height(12.dp))
+            // 2. Content Column
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = screenPadding)
+                    .padding(top = 12.dp) // Add some top padding below the header
+            ) {
+                OutlinedTextField(
+                    value = searchText,
+                    onValueChange = {
+                        searchText = it
+                        vm.searchRecipes(it.text)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("Search recipes") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) }
+                )
 
-            TabRow(selectedTabIndex = selectedTab) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title) }
-                    )
+                Spacer(Modifier.height(12.dp))
+
+                TabRow(selectedTabIndex = selectedTab) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title) }
+                        )
+                    }
                 }
+
+                Spacer(Modifier.height(12.dp))
+
+                val list = if (selectedTab == 0) searchedRecipes else savedRecipes
+
+                RecipeListView(
+                    recipes = list,
+                    savedRecipeIds = savedRecipeIds,
+                    onSaveClick = { vm.saveRecipe(it) },
+                    onDeleteClick = { vm.deleteSavedRecipe(it.id) },
+                    onAddToCartClick = { vm.addRecipeMissingToCart(it) },
+                    contentPadding = PaddingValues(bottom = 80.dp), // Increased bottom padding for nav bar
+                    itemSpacing = itemSpacing
+                )
             }
-
-            Spacer(Modifier.height(12.dp))
-
-            val list = if (selectedTab == 0) searchedRecipes else savedRecipes
-
-            RecipeListView(
-                recipes = list,
-                savedRecipeIds = savedRecipeIds,
-                onSaveClick = { vm.saveRecipe(it) },
-                onDeleteClick = { vm.deleteSavedRecipe(it.id) },
-                onAddToCartClick = { vm.addRecipeMissingToCart(it) },
-                contentPadding = PaddingValues(bottom = screenPadding),
-                itemSpacing = itemSpacing
-            )
         }
     }
 }
@@ -153,7 +166,9 @@ fun RecipeListView(
         ) {
             Text(
                 text = "No recipes here yet.\nTry searching or save some recipes!",
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         return
@@ -190,7 +205,7 @@ fun RecipeCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = { expanded = !expanded },
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.medium, // Changed to medium to match other screens
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

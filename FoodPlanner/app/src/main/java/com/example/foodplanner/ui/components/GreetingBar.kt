@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,18 +18,21 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.foodplanner.R // <--- IMPORTANT: Verify this import matches your package
+import com.example.foodplanner.R
 import com.example.foodplanner.ui.auth.AuthViewModel
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 
 @Composable
-fun GreetingBar(authViewModel: AuthViewModel) {
+fun GreetingBar(
+    authViewModel: AuthViewModel,
+    onStatsClick: () -> Unit // Callback to navigate to Analytics screen
+) {
     val user by authViewModel.user.collectAsState()
     var showMenu by remember { mutableStateOf(false) }
     var isGreetingVisible by remember { mutableStateOf(true) }
 
-    // Determine greeting based on current time
+    // Logic to select the greeting message based on time of day
     val greetingText = remember {
         val hour = LocalTime.now().hour
         when (hour) {
@@ -38,13 +42,12 @@ fun GreetingBar(authViewModel: AuthViewModel) {
         }
     }
 
-    // Auto-dismiss notification after 5 seconds
+    // Auto-hide the notification part after 5 seconds
     LaunchedEffect(Unit) {
         delay(5000)
         isGreetingVisible = false
     }
 
-    // Main Header Surface (Blue bar)
     Surface(
         color = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -59,7 +62,7 @@ fun GreetingBar(authViewModel: AuthViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
 
-            // --- ANIMATED LEFT SECTION (Notification <-> Logo) ---
+            // --- ANIMATED HEADER CONTENT ---
             Box(modifier = Modifier.weight(1f)) {
                 Crossfade(
                     targetState = isGreetingVisible,
@@ -67,7 +70,7 @@ fun GreetingBar(authViewModel: AuthViewModel) {
                     label = "HeaderAnimation"
                 ) { showNotification ->
                     if (showNotification) {
-                        // STATE A: Notification Message
+                        // STATE A: Greeting Notification
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.Notifications,
@@ -84,7 +87,7 @@ fun GreetingBar(authViewModel: AuthViewModel) {
                             )
                         }
                     } else {
-                        // STATE B: App Logo and Title
+                        // STATE B: App Identity
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Image(
                                 painter = painterResource(id = R.drawable.icon_foreground),
@@ -105,7 +108,7 @@ fun GreetingBar(authViewModel: AuthViewModel) {
                 }
             }
 
-            // --- PERMANENT RIGHT SECTION (Profile) ---
+            // --- PROFILE MENU ---
             Box(contentAlignment = Alignment.Center) {
                 IconButton(onClick = { showMenu = true }) {
                     Icon(
@@ -120,6 +123,7 @@ fun GreetingBar(authViewModel: AuthViewModel) {
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false }
                 ) {
+                    // Item 1: User Email (Disabled/Info)
                     DropdownMenuItem(
                         text = {
                             Text(
@@ -131,7 +135,22 @@ fun GreetingBar(authViewModel: AuthViewModel) {
                         onClick = { },
                         enabled = false
                     )
+
                     HorizontalDivider()
+
+                    // Item 2: Analytics & Insights (Navigation)
+                    DropdownMenuItem(
+                        text = { Text("Analytics") },
+                        leadingIcon = {
+                            Icon(Icons.Default.DateRange, contentDescription = null)
+                        },
+                        onClick = {
+                            showMenu = false
+                            onStatsClick() // Trigger navigation
+                        }
+                    )
+
+                    // Item 3: Logout
                     DropdownMenuItem(
                         text = { Text("Logout") },
                         onClick = {

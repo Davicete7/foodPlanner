@@ -1,4 +1,3 @@
-
 package com.example.foodplanner.ui.nav
 
 import androidx.compose.foundation.layout.Box
@@ -35,17 +34,20 @@ import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.cart.CartScreen
 import com.example.foodplanner.ui.chat.ChatListScreen
 import com.example.foodplanner.ui.chat.ChatScreen
-import com.example.foodplanner.ui.components.GreetingBar
 import com.example.foodplanner.ui.pantry.InventoryScreen
 import com.example.foodplanner.ui.recipes.RecipeListScreen
+import com.example.foodplanner.ui.stats.StatsScreen
 
-
+/**
+ * Root navigation component that handles the high-level flow between Authentication and the Main App.
+ */
 @Composable
 fun AppNav() {
     val authViewModel: AuthViewModel = viewModel()
     val authState by authViewModel.authState.collectAsState()
     val navController = rememberNavController()
 
+    // Redirect user based on authentication status
     LaunchedEffect(authState) {
         when (authState) {
             is AuthState.Authenticated -> {
@@ -73,12 +75,16 @@ fun AppNav() {
     }
 }
 
+/**
+ * The main application shell containing the Bottom Navigation Bar and the nested navigation host
+ * for the core features (Inventory, Recipes, Cart, Chat).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(authViewModel: AuthViewModel) {
     val navController = rememberNavController()
+
     Scaffold(
-        topBar = { GreetingBar(authViewModel) },
         bottomBar = { BottomNavigationBar(navController) }
     ) { padding ->
         Box(
@@ -87,14 +93,36 @@ fun MainScreen(authViewModel: AuthViewModel) {
                 .padding(padding)
         ) {
             NavHost(navController = navController, startDestination = Routes.Inventory) {
-                composable(Routes.Inventory) { InventoryScreen() }
-                composable(Routes.Recipes) { RecipeListScreen() }
-                composable(Routes.Cart) { CartScreen() }
-                composable(Routes.ChatList) { 
-                    ChatListScreen(onChatClick = { chatId ->
-                        navController.navigate(Routes.chat(chatId))
-                    })
+
+                // Inventory Tab
+                composable(Routes.Inventory) {
+                    InventoryScreen(
+                        navController = navController,
+                        authViewModel = authViewModel
+                    )
                 }
+
+                // Recipes Tab
+                composable(Routes.Recipes) { RecipeListScreen(navController = navController) }
+
+                // Cart Tab
+                composable(Routes.Cart) {
+                    CartScreen(
+                        navController = navController,
+                        authViewModel = authViewModel
+                    )
+                }
+
+                // Chat/Chef Tab
+                composable(Routes.ChatList) {
+                    ChatListScreen(navController = navController,
+                        authViewModel = authViewModel,
+                        onChatClick = { chatId ->
+                            navController.navigate(Routes.chat(chatId))
+                        })
+                }
+
+                // Navigation route for specific chat conversations
                 composable(
                     route = "chat/{chatId}",
                     arguments = listOf(navArgument("chatId") { type = NavType.StringType })
@@ -105,11 +133,27 @@ fun MainScreen(authViewModel: AuthViewModel) {
                         onBack = { navController.popBackStack() }
                     )
                 }
+
+                // Analytics/Stats Screen:
+                // This is a secondary screen accessed from Inventory.
+                composable("stats") {
+                    StatsScreen(
+                        authViewModel = authViewModel,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }
 }
 
+/**
+ * Renders the bottom navigation items and handles navigation logic.
+ *
+ * NOTE: I have configured the navigation logic to strictly reset the destination state.
+ * 'saveState' and 'restoreState' are omitted to ensure that clicking a tab (e.g., Inventory)
+ * always returns the user to the root of that tab, closing any temporary screens like Stats.
+ */
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
     val backStack by navController.currentBackStackEntryAsState()
@@ -127,11 +171,13 @@ fun BottomNavigationBar(navController: NavHostController) {
                 selected = currentRoute == route,
                 onClick = {
                     navController.navigate(route) {
+                        // Clear the back stack up to the start destination to prevent stack accumulation
                         popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+                            // saveState = true // Disabled: We want to clear nested screens (like Stats) on tab switch
                         }
+                        // Avoid multiple copies of the same destination
                         launchSingleTop = true
-                        restoreState = true
+                        // restoreState = true // Disabled: Forces a fresh load of the tab, fixing "stuck on Stats" issue
                     }
                 },
                 icon = { Icon(icon, contentDescription = null) },
