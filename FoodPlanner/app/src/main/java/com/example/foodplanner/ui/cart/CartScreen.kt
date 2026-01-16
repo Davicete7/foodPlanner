@@ -51,147 +51,146 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
     var qty by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf("pcs") }
 
-    val screenPadding = 16.dp
-
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Cart") },
-                actions = {
-                    TextButton(
-                        onClick = { vm.clearCart() },
-                        enabled = cart.isNotEmpty()
-                    ) {
-                        Text("Clear")
-                    }
-                }
-            )
-        }
+        // Eliminada la TopAppBar para que no haya espacio blanco doble con la GreetingBar
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = screenPadding, vertical = 12.dp)
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Add Item (Card)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Add item manually", style = MaterialTheme.typography.titleSmall)
-                    Spacer(Modifier.height(10.dp))
 
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Product") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
+            // --- ADD ITEM FORM ---
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Add item manually", style = MaterialTheme.typography.titleSmall)
+                        Spacer(Modifier.height(10.dp))
 
-                    Spacer(Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
                         OutlinedTextField(
-                            value = qty,
-                            onValueChange = { qty = it },
-                            label = { Text("Qty") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Product") },
+                            modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
 
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(Modifier.height(10.dp))
 
-                        Box(modifier = Modifier.weight(1f)) {
-                            UnitSelector(
-                                selectedUnit = unit,
-                                availableUnits = availableUnits,
-                                onUnitSelected = { unit = it }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = qty,
+                                onValueChange = { qty = it },
+                                label = { Text("Qty") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
                             )
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Box(modifier = Modifier.weight(1f)) {
+                                UnitSelector(
+                                    selectedUnit = unit,
+                                    availableUnits = availableUnits,
+                                    onUnitSelected = { unit = it }
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                val quantityDouble = qty.toDoubleOrNull() ?: 0.0
+                                if (name.isNotBlank() && quantityDouble > 0.0) {
+                                    vm.addToCartManual(name, quantityDouble, unit)
+                                    name = ""
+                                    qty = ""
+                                    unit = "pcs"
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = name.isNotBlank() && qty.isNotBlank()
+                        ) {
+                            Text("Add to cart")
                         }
                     }
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Button(
-                        onClick = {
-                            val quantityDouble = qty.toDoubleOrNull() ?: 0.0
-                            if (name.isNotBlank() && quantityDouble > 0.0) {
-                                vm.addToCartManual(name, quantityDouble, unit)
-                                name = ""
-                                qty = ""
-                                unit = "pcs"
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = name.isNotBlank() && qty.isNotBlank()
-                    ) {
-                        Text("Add to cart")
-                    }
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
-
-            // Header "Items"
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Items", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "${cart.size}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(Modifier.height(8.dp))
-            HorizontalDivider()
-            Spacer(Modifier.height(8.dp))
-
-            // List
-            if (cart.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
+            // --- LIST HEADER & CLEAR BUTTON ---
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "Your cart is empty.\nAdd items or import missing ingredients from recipes.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(cart, key = { it.id ?: it.hashCode() }) { row ->
-                        CartItemCard(
-                            item = row,
-                            onEdit = { ingredientToEdit = it },
-                            onDelete = { vm.deleteCartItem(it.id!!) },
-                            onBuy = { itemToBuy = it }
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text("Items", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "(${cart.size})",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+
+                    // Botón CLEAR aquí, mucho más limpio y contextual
+                    if (cart.isNotEmpty()) {
+                        TextButton(
+                            onClick = { vm.clearCart() },
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text("Clear All")
+                        }
+                    }
+                }
+                HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+            }
+
+            // --- CART ITEMS LIST ---
+            if (cart.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Your cart is empty.\nAdd items manually or from recipes.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                items(cart, key = { it.id ?: it.hashCode() }) { row ->
+                    CartItemCard(
+                        item = row,
+                        onEdit = { ingredientToEdit = it },
+                        onDelete = { vm.deleteCartItem(it.id!!) },
+                        onBuy = { itemToBuy = it }
+                    )
                 }
             }
         }
     }
 
-    // Dialogs
+    // --- DIALOGS (Sin cambios) ---
     itemToBuy?.let { item ->
         BuyItemDialog(
             item = item,
@@ -218,6 +217,8 @@ fun CartScreen(authViewModel: AuthViewModel = viewModel()) {
     }
 }
 
+// Las funciones auxiliares (CartItemCard, EditCartDialog, BuyItemDialog) se mantienen igual que en tu código original.
+// Solo asegúrate de copiar también esas funciones al final del archivo si no están importadas de otro sitio.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CartItemCard(
@@ -228,15 +229,15 @@ private fun CartItemCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = { onBuy(item) }, // toque simple: tocar la card compra
-        shape = MaterialTheme.shapes.large,
+        onClick = { onBuy(item) },
+        shape = MaterialTheme.shapes.medium, // Unificado con el estilo general
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -254,7 +255,7 @@ private fun CartItemCard(
                 )
             }
 
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { onBuy(item) }) {
                     Icon(
                         imageVector = Icons.Default.ShoppingCart,
@@ -263,16 +264,17 @@ private fun CartItemCard(
                     )
                 }
                 IconButton(onClick = { onEdit(item) }) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(20.dp))
                 }
                 IconButton(onClick = { onDelete(item) }) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
                 }
             }
         }
     }
 }
 
+// ... (Resto de diálogos: EditCartDialog y BuyItemDialog igual que en tu código)
 @Composable
 fun EditCartDialog(
     ingredient: CartItem,

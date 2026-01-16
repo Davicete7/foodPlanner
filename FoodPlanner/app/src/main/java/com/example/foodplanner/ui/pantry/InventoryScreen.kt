@@ -67,7 +67,7 @@ fun InventoryScreen(authViewModel: AuthViewModel = viewModel()) {
     var ingredientToEdit by remember { mutableStateOf<InventoryItem?>(null) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Inventory") }) }
+        // topBar = { TopAppBar(title = { Text("Inventory") }) }
     ) { innerPadding ->
 
         // Main container allowing scrolling for the entire screen content

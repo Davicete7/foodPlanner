@@ -83,9 +83,9 @@ fun RecipeListScreen(authViewModel: AuthViewModel = viewModel()) {
     var searchText by remember { mutableStateOf(TextFieldValue("")) }
 
     Scaffold(
-        topBar = {
+        /*topBar = {
             TopAppBar(title = { Text("Recipes") })
-        }
+        }*/
     ) { innerPadding ->
         Column(
             modifier = Modifier
