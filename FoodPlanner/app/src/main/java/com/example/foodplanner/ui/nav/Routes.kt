@@ -7,4 +7,5 @@ object Routes {
     const val Cart = "cart"
     const val ChatList = "chatList"
     fun chat(chatId: String) = "chat/$chatId"
+    const val Settings = "settings"
 }

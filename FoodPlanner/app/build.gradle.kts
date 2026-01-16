@@ -29,7 +29,10 @@ android {
                 localProperties.load(input)
             }
         }
-        val apiKey = localProperties.getProperty("GEMINI_API_KEY", "")
+        val apiKey = localProperties.getProperty("GEMINI_API_KEY")
+        if (apiKey == null) {
+            throw IllegalStateException("GEMINI_API_KEY not found in local.properties. Please add it.")
+        }
         buildConfigField("String", "GEMINI_API_KEY", "\"$apiKey\"")
     }
 

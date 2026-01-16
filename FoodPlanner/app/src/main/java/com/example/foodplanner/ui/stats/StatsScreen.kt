@@ -19,13 +19,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.components.GreetingBar
+import com.example.foodplanner.ui.nav.Routes
 import com.example.foodplanner.viewmodel.PantryViewModel
 
 @Composable
 fun StatsScreen(
     authViewModel: AuthViewModel = viewModel(),
+    navController: NavController, // Add NavController
     onBack: () -> Unit // Callback to navigate back if needed
 ) {
     val context = LocalContext.current
@@ -75,7 +78,8 @@ fun StatsScreen(
             // Reusable header component with profile menu
             GreetingBar(
                 authViewModel = authViewModel,
-                onStatsClick = { } // No action needed since we are already on the Stats screen
+                onStatsClick = { }, // No action needed since we are already on the Stats screen
+                onSettingsClick = { navController.navigate(Routes.Settings) } // Navigate to Settings
             )
 
             LazyColumn(
@@ -295,12 +299,16 @@ fun ActivityBarChart(modifier: Modifier = Modifier) {
             strokeWidth = 2f
         )
     }
+}
 
-    // Labels row below the canvas
+// Labels row below the canvas
+@Composable
+fun DayLabels() {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceAround
     ) {
+        val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
         days.forEach { Text(it, style = MaterialTheme.typography.labelSmall, color = Color.Gray) }
     }
 }

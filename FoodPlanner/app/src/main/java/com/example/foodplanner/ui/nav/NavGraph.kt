@@ -36,6 +36,7 @@ import com.example.foodplanner.ui.chat.ChatListScreen
 import com.example.foodplanner.ui.chat.ChatScreen
 import com.example.foodplanner.ui.pantry.InventoryScreen
 import com.example.foodplanner.ui.recipes.RecipeListScreen
+import com.example.foodplanner.ui.settings.SettingsScreen
 import com.example.foodplanner.ui.stats.StatsScreen
 
 /**
@@ -139,7 +140,14 @@ fun MainScreen(authViewModel: AuthViewModel) {
                 composable("stats") {
                     StatsScreen(
                         authViewModel = authViewModel,
+                        navController = navController, // Pass NavController
                         onBack = { navController.popBackStack() }
+                    )
+                }
+                // Settings Screen
+                composable(Routes.Settings) {
+                    SettingsScreen(
+                        authViewModel = authViewModel
                     )
                 }
             }

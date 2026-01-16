@@ -17,7 +17,7 @@ class UserRepository {
         return snapshot?.toObject<User>()
     }
 
-    fun updateUser(user: User) {
-        db.collection("users").document(user.uid).set(user)
+    suspend fun updateUser(uid: String, updates: Map<String, Any>) {
+        db.collection("users").document(uid).update(updates).await()
     }
 }

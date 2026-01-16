@@ -30,6 +30,7 @@ import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.components.GreetingBar
 import com.example.foodplanner.ui.components.UnitSelector
 import com.example.foodplanner.ui.components.availableUnits
+import com.example.foodplanner.ui.nav.Routes
 import com.example.foodplanner.viewmodel.PantryViewModel
 import com.example.foodplanner.viewmodel.SortOrder
 import java.text.SimpleDateFormat
@@ -80,7 +81,8 @@ fun InventoryScreen(
             // Custom Header with Profile and Navigation to Stats
             GreetingBar(
                 authViewModel = authViewModel,
-                onStatsClick = { navController.navigate("stats") }
+                onStatsClick = { navController.navigate("stats") },
+                onSettingsClick = { navController.navigate(Routes.Settings) }
             )
 
             // Main Content List

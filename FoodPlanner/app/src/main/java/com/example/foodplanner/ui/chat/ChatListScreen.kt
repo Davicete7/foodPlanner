@@ -38,6 +38,7 @@ import androidx.navigation.NavController
 import com.example.foodplanner.data.model.Chat
 import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.components.GreetingBar
+import com.example.foodplanner.ui.nav.Routes
 import com.example.foodplanner.viewmodel.ChatListViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -98,7 +99,8 @@ fun ChatListScreen(
             // 1. Added GreetingBar
             GreetingBar(
                 authViewModel = authViewModel,
-                onStatsClick = { navController.navigate("stats") }
+                onStatsClick = { navController.navigate("stats") },
+                onSettingsClick = { navController.navigate(Routes.Settings) }
             )
 
             // 2. Chat List

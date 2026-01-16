@@ -51,6 +51,7 @@ import coil.compose.AsyncImage
 import com.example.foodplanner.data.recipes.RecipeDTO
 import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.components.GreetingBar
+import com.example.foodplanner.ui.nav.Routes
 import com.example.foodplanner.viewmodel.PantryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,7 +96,8 @@ fun RecipeListScreen(
             // 1. Added GreetingBar for consistent header and access to Stats
             GreetingBar(
                 authViewModel = authViewModel,
-                onStatsClick = { navController.navigate("stats") }
+                onStatsClick = { navController.navigate("stats") },
+                onSettingsClick = { navController.navigate(Routes.Settings) }
             )
 
             // 2. Content Column

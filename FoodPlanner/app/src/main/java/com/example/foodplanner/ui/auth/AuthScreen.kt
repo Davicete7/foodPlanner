@@ -24,6 +24,8 @@ fun AuthScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
     var isLogin by remember { mutableStateOf(true) }
     val authState by authViewModel.authState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -56,6 +58,28 @@ fun AuthScreen(
     ) {
         Text(text = if (isLogin) "Login" else "Register", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
+
+        if (!isLogin) {
+            OutlinedTextField(
+                value = firstName,
+                onValueChange = { firstName = it.filter { char -> char != '\n' } },
+                label = { Text("First Name") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = lastName,
+                onValueChange = { lastName = it.filter { char -> char != '\n' } },
+                label = { Text("Last Name") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         OutlinedTextField(
             value = email,
@@ -95,7 +119,7 @@ fun AuthScreen(
                 if (isLogin) {
                     authViewModel.login(email, password)
                 } else {
-                    authViewModel.register(email, password)
+                    authViewModel.register(email, password, firstName, lastName)
                 }
             },
             modifier = Modifier.fillMaxWidth(),

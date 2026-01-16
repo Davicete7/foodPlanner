@@ -106,13 +106,18 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun register(email: String, password: String) {
+    fun register(email: String, password: String, firstName: String, lastName: String) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             try {
                 val authResult = auth.createUserWithEmailAndPassword(email, password).await()
                 authResult?.user?.let { firebaseUser ->
-                    val user = User(uid = firebaseUser.uid, email = email)
+                    val user = User(
+                        uid = firebaseUser.uid, 
+                        email = email,
+                        firstName = firstName,
+                        lastName = lastName
+                    )
                     userRepository.createUser(user)
                     _user.value = user
                     _authState.value = AuthState.Authenticated

@@ -24,6 +24,7 @@ import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.components.GreetingBar
 import com.example.foodplanner.ui.components.UnitSelector
 import com.example.foodplanner.ui.components.availableUnits
+import com.example.foodplanner.ui.nav.Routes
 import com.example.foodplanner.ui.pantry.DateSelector
 import com.example.foodplanner.viewmodel.PantryViewModel
 
@@ -66,7 +67,8 @@ fun CartScreen(
             // Custom Top Bar with Profile and Analytics access
             GreetingBar(
                 authViewModel = authViewModel,
-                onStatsClick = { navController.navigate("stats") }
+                onStatsClick = { navController.navigate("stats") },
+                onSettingsClick = { navController.navigate(Routes.Settings) }
             )
 
             LazyColumn(

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,7 +27,8 @@ import java.time.LocalTime
 @Composable
 fun GreetingBar(
     authViewModel: AuthViewModel,
-    onStatsClick: () -> Unit // Callback to navigate to Analytics screen
+    onStatsClick: () -> Unit, // Callback to navigate to Analytics screen
+    onSettingsClick: () -> Unit
 ) {
     val user by authViewModel.user.collectAsState()
     var showMenu by remember { mutableStateOf(false) }
@@ -88,21 +90,38 @@ fun GreetingBar(
                         }
                     } else {
                         // STATE B: App Identity
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Image(
-                                painter = painterResource(id = R.drawable.icon_foreground),
-                                contentDescription = "App Logo",
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape),
-                                contentScale = ContentScale.Fit
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Food Planner",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.icon_foreground),
+                                    contentDescription = "App Logo",
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Fit
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "Food Planner",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            user?.firstName?.let { name ->
+                                if (name.isNotEmpty()) {
+                                    Text(
+                                        text = name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Normal,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -149,8 +168,19 @@ fun GreetingBar(
                             onStatsClick() // Trigger navigation
                         }
                     )
+                    // Item 3: Settings
+                    DropdownMenuItem(
+                        text = { Text("Settings") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Settings, contentDescription = null)
+                        },
+                        onClick = {
+                            showMenu = false
+                            onSettingsClick()
+                        }
+                    )
 
-                    // Item 3: Logout
+                    // Item 4: Logout
                     DropdownMenuItem(
                         text = { Text("Logout") },
                         onClick = {
