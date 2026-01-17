@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.foodplanner.BuildConfig
+import com.example.foodplanner.R
 import com.example.foodplanner.data.model.ChatMessage
 import com.example.foodplanner.data.repo.ChatRepository
 import com.example.foodplanner.data.repo.PantryRepository
@@ -60,13 +61,12 @@ class ChatViewModel(app: Application, private val userId: String, private val ch
                     }
                 }
 
-                // Load the updated chat history each time
                 val chatHistory = chatRepo.getMessages(chatId).map {
                     content(if (it.isUser) "user" else "model") { text(it.text) }
                 }
 
                 val systemPrompt = """
-                You are an expert chef. 👨‍🍳 Your tone is friendly, engaging, and helpful. Use emojis to make your answers more fun!
+                You are an expert chef. Your tone is friendly, engaging, and helpful.
 
                 Your main task is to help the user cook with what they have.
 
@@ -85,7 +85,7 @@ class ChatViewModel(app: Application, private val userId: String, private val ch
 
                 3. **If the user asks a general question** (e.g., "what can I cook?", "any ideas for dinner?"):
                    - Suggest recipes based **mainly** on their inventory.
-                   - Prioritize using ingredients that are about to expire to help reduce waste. Be creative!
+                   - Prioritize using ingredients that are about to expire to help reduce waste.
 
                 4. **Recipe Formatting:** When you provide a recipe, format it like this to make it easy to read:
                    - Use a **bold title** for the recipe name.
@@ -110,8 +110,8 @@ class ChatViewModel(app: Application, private val userId: String, private val ch
                 }
 
             } catch (e: Exception) {
-                Log.e("ChatViewModel", "Error calling Gemini API", e)
-                val errorMessage = ChatMessage(text = "There was an error contacting the AI Chef: ${e.message}", isUser = false)
+                Log.e("ChatViewModel", "Error calling generative AI", e)
+                val errorMessage = ChatMessage(text = getApplication<Application>().getString(R.string.chat_error_message, e.message), isUser = false)
                 chatRepo.saveMessage(chatId, errorMessage)
             } finally {
                 _isLoading.value = false

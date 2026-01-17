@@ -14,11 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.foodplanner.R
 import com.example.foodplanner.data.db.entities.CartItem
 import com.example.foodplanner.ui.auth.AuthViewModel
 import com.example.foodplanner.ui.components.GreetingBar
@@ -82,7 +84,7 @@ fun CartScreen(
                 // --- SCREEN TITLE ---
                 item {
                     Text(
-                        text = "Shopping Cart",
+                        text = stringResource(id = R.string.cart_screen_title),
                         style = MaterialTheme.typography.headlineMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -97,13 +99,13 @@ fun CartScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Add item manually", style = MaterialTheme.typography.titleSmall)
+                            Text(stringResource(id = R.string.add_item_manually), style = MaterialTheme.typography.titleSmall)
                             Spacer(Modifier.height(10.dp))
 
                             OutlinedTextField(
                                 value = name,
                                 onValueChange = { name = it },
-                                label = { Text("Product") },
+                                label = { Text(stringResource(id = R.string.product)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -117,7 +119,7 @@ fun CartScreen(
                                 OutlinedTextField(
                                     value = qty,
                                     onValueChange = { qty = it },
-                                    label = { Text("Qty") },
+                                    label = { Text(stringResource(id = R.string.quantity_short)) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     modifier = Modifier.weight(1f),
                                     singleLine = true
@@ -149,7 +151,7 @@ fun CartScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 enabled = name.isNotBlank() && qty.isNotBlank()
                             ) {
-                                Text("Add to cart")
+                                Text(stringResource(id = R.string.add_to_cart))
                             }
                         }
                     }
@@ -163,7 +165,7 @@ fun CartScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Text("Items", style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(id = R.string.items), style = MaterialTheme.typography.titleMedium)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "(${cart.size})",
@@ -178,7 +180,7 @@ fun CartScreen(
                                 onClick = { vm.clearCart() },
                                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                             ) {
-                                Text("Clear All")
+                                Text(stringResource(id = R.string.clear_all))
                             }
                         }
                     }
@@ -195,7 +197,7 @@ fun CartScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Your cart is empty.\nAdd items manually or from recipes.",
+                                text = stringResource(id = R.string.cart_empty_message),
                                 style = MaterialTheme.typography.bodyMedium,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -284,17 +286,17 @@ private fun CartItemCard(
                 IconButton(onClick = { onBuy(item) }) {
                     Icon(
                         imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = "Buy",
+                        contentDescription = stringResource(id = R.string.buy_action),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
                 IconButton(onClick = { onEdit(item) }) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(id = R.string.edit_action), modifier = Modifier.size(20.dp))
                 }
                 IconButton(onClick = { onDelete(item) }) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "Delete",
+                        contentDescription = stringResource(id = R.string.delete_action),
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.error
                     )
@@ -317,26 +319,26 @@ fun EditCartDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit item") },
+        title = { Text(stringResource(id = R.string.edit_item_title)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(id = R.string.name_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(10.dp))
                 OutlinedTextField(
                     value = qty,
                     onValueChange = { qty = it },
-                    label = { Text("Quantity") },
+                    label = { Text(stringResource(id = R.string.quantity_label)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(Modifier.height(12.dp))
-                Text("Unit", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(id = R.string.unit_label), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(4.dp))
                 UnitSelector(
                     selectedUnit = unit,
@@ -349,10 +351,10 @@ fun EditCartDialog(
             TextButton(onClick = {
                 val updatedQty = qty.toDoubleOrNull() ?: ingredient.quantity
                 onSave(ingredient.copy(name = name, quantity = updatedQty, unit = unit))
-            }) { Text("Save") }
+            }) { Text(stringResource(id = R.string.save_action)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(id = R.string.cancel_action)) }
         }
     )
 }
@@ -367,12 +369,12 @@ fun BuyItemDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Product purchased") },
+        title = { Text(stringResource(id = R.string.product_purchased_title)) },
         text = {
             Column {
-                Text("Adding '${item.name}' to inventory.")
+                Text(stringResource(id = R.string.adding_item_to_inventory, item.name))
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Select expiration date (optional):", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(id = R.string.select_expiration_date), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 DateSelector(
@@ -383,12 +385,12 @@ fun BuyItemDialog(
         },
         confirmButton = {
             Button(onClick = { onConfirm(expirationDate) }) {
-                Text("Add to inventory")
+                Text(stringResource(id = R.string.add_to_inventory))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(id = R.string.cancel_action))
             }
         }
     )

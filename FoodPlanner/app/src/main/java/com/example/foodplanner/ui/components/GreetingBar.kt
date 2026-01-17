@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.foodplanner.R
@@ -38,9 +39,9 @@ fun GreetingBar(
     val greetingText = remember {
         val hour = LocalTime.now().hour
         when (hour) {
-            in 5..11 -> "Good morning! Ready to plan your meals?"
-            in 12..18 -> "Good afternoon! Keep up the energy."
-            else -> "Good evening! Planning something delicious?"
+            in 5..11 -> R.string.greeting_morning
+            in 12..18 -> R.string.greeting_afternoon
+            else -> R.string.greeting_evening
         }
     }
 
@@ -82,7 +83,7 @@ fun GreetingBar(
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = greetingText,
+                                text = stringResource(id = greetingText),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
                                 lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2
@@ -98,7 +99,7 @@ fun GreetingBar(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Image(
                                     painter = painterResource(id = R.drawable.icon_foreground),
-                                    contentDescription = "App Logo",
+                                    contentDescription = stringResource(id = R.string.app_logo_content_description),
                                     modifier = Modifier
                                         .size(32.dp)
                                         .clip(CircleShape),
@@ -106,7 +107,7 @@ fun GreetingBar(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = "Food Planner",
+                                    text = stringResource(id = R.string.food_planner_title),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -132,7 +133,7 @@ fun GreetingBar(
                 IconButton(onClick = { showMenu = true }) {
                     Icon(
                         imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Profile",
+                        contentDescription = stringResource(id = R.string.profile_content_description),
                         modifier = Modifier.size(32.dp),
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
@@ -146,7 +147,7 @@ fun GreetingBar(
                     DropdownMenuItem(
                         text = {
                             Text(
-                                text = user?.email ?: "No email",
+                                text = user?.email ?: stringResource(id = R.string.no_email),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
@@ -159,7 +160,7 @@ fun GreetingBar(
 
                     // Item 2: Analytics & Insights (Navigation)
                     DropdownMenuItem(
-                        text = { Text("Analytics") },
+                        text = { Text(stringResource(id = R.string.analytics)) },
                         leadingIcon = {
                             Icon(Icons.Default.DateRange, contentDescription = null)
                         },
@@ -170,7 +171,7 @@ fun GreetingBar(
                     )
                     // Item 3: Settings
                     DropdownMenuItem(
-                        text = { Text("Settings") },
+                        text = { Text(stringResource(id = R.string.settings)) },
                         leadingIcon = {
                             Icon(Icons.Default.Settings, contentDescription = null)
                         },
@@ -182,7 +183,7 @@ fun GreetingBar(
 
                     // Item 4: Logout
                     DropdownMenuItem(
-                        text = { Text("Logout") },
+                        text = { Text(stringResource(id = R.string.logout)) },
                         onClick = {
                             showMenu = false
                             authViewModel.logout()

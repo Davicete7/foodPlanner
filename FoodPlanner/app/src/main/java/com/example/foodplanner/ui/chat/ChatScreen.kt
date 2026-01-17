@@ -38,9 +38,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.foodplanner.R
 import com.example.foodplanner.data.model.ChatMessage
 import com.example.foodplanner.viewmodel.ChatViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -48,13 +51,13 @@ import com.google.firebase.auth.FirebaseAuth
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(chatId: String, onBack: () -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val application = context.applicationContext as Application
     val userId = FirebaseAuth.getInstance().currentUser?.uid
 
     if (userId == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Log in to use the AI Chef.")
+            Text(stringResource(id = R.string.chat_login_prompt))
         }
         return
     }
@@ -65,7 +68,7 @@ fun ChatScreen(chatId: String, onBack: () -> Unit) {
 
     val messagesQuery = viewModel.getMessagesFlow()
 
-    // ✅ ProduceState + awaitDispose (correcto aquí)
+    // Correctly using produceState with awaitDispose
     val messages by produceState<List<ChatMessage>>(initialValue = emptyList(), key1 = messagesQuery) {
         val listener = messagesQuery.addSnapshotListener { snapshot, error ->
             if (error != null) return@addSnapshotListener
@@ -84,14 +87,14 @@ fun ChatScreen(chatId: String, onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        "AI Chef",
+                        stringResource(id = R.string.chat_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back_button_description))
                     }
                 }
             )
@@ -103,13 +106,13 @@ fun ChatScreen(chatId: String, onBack: () -> Unit) {
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // Chat: mostramos el final como lo más reciente
+            // The LazyColumn is reversed to show the most recent messages at the bottom.
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 reverseLayout = true,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // reverseLayout=true => pasamos la lista al revés para que “lo último” quede abajo
+                // The list is reversed so the newest messages appear at the bottom.
                 items(messages.reversed()) { msg ->
                     MessageBubble(text = msg.text, isUser = msg.isUser)
                 }
@@ -138,7 +141,7 @@ fun ChatScreen(chatId: String, onBack: () -> Unit) {
                         value = inputText,
                         onValueChange = { inputText = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("What should I cook today?") },
+                        placeholder = { Text(stringResource(id = R.string.chat_input_placeholder)) },
                         enabled = !isLoading,
                         singleLine = true
                     )
@@ -152,7 +155,7 @@ fun ChatScreen(chatId: String, onBack: () -> Unit) {
                         },
                         enabled = !isLoading && inputText.isNotBlank()
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(id = R.string.send_button_description))
                     }
                 }
             }
