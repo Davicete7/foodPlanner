@@ -93,7 +93,7 @@ fun MainScreen(authViewModel: AuthViewModel) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            NavHost(navController = navController, startDestination = Routes.Inventory) {
+            NavHost(navController = navController, startDestination = Routes.Recipes) {
 
                 // Inventory Tab
                 composable(Routes.Inventory) {
